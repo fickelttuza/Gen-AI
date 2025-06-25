@@ -159,25 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
         setupThemeToggle();
         setupCollapsiblePanels();
-        setupMenuSystem(); // For desktop dropdowns
-        setupDraggablePanels();
-
-        updateLayersPanel();
-        updatePropertiesPanel();
-        setActiveTool('move');
-        updateZoomUI(canvas.getZoom());
-
-        if (canvas.getObjects().length === 0) {
-            const rect = new fabric.Rect({
-                left: 100, top: 100, fill: '#7f5af0', width: 200, height: 150,
-                name: 'Background Shape', rx: 0, ry: 0
-            });
-            canvas.add(rect);
-            canvas.centerObject(rect);
-            canvas.setActiveObject(rect);
-            saveCanvasState();
-        }
-
+        
         // Initial app mode based on screen width
         handleResize(); // Call on init to set up initial panel states and visibility
         updateHistoryButtons();
@@ -377,6 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleResize() {
         resizeCanvasToFitContainer();
         populateMobileMenu(); // Re-populate mobile menu on resize
+        setupDraggablePanels(); // Call setupDraggablePanels on resize
 
         if (window.innerWidth <= 768) {
             // Ensure mobile bottom bar is visible on mobile resize
