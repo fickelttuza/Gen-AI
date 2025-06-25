@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Composer Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-layout" data-app-mode="edit">
+        <header class="top-menu-bar">
+            <div class="logo"><i class="fas fa-drafting-compass"></i> Visual Composer</div>
+            <nav id="desktop-nav">
+                <div class="menu-item" id="file-menu">
+                    <a href="#" class="menu-link">File</a>
+                    <div class="dropdown-menu">
+                        <a href="#" id="new-project">New Project</a>
+                        <a href="#" id="open-image">Open Image</a>
+                        <a href="#" id="save-project">Save Project</a>
+                        <a href="#" id="export-png">Export as PNG</a>
+                    </div>
+                </div>
+                <div class="menu-item" id="edit-menu">
+                    <a href="#" class="menu-link">Edit</a>
+                    <div class="dropdown-menu">
+                        <a href="#" id="undo-action">Undo</a>
+                        <a href="#" id="redo-action">Redo</a>
+                        <a href="#" id="cut-object">Cut</a>
+                        <a href="#" id="copy-object">Copy</a>
+                        <a href="#" id="paste-object">Paste</a>
+                    </div>
+                </div>
+                <div class="menu-item" id="image-menu">
+                    <a href="#" class="menu-link">Image</a>
+                    <div class="dropdown-menu">
+                        <a href="#" id="crop-image">Crop Image</a>
+                        <a href="#" id="resize-image">Resize Canvas</a>
+                        <a href="#" id="rotate-image">Rotate</a>
+                    </div>
+                </div>
+                <div class="menu-item" id="layer-menu">
+                    <a href="#" class="menu-link">Layer</a>
+                    <div class="dropdown-menu">
+                        <a href="#" id="add-layer">Add New Layer</a>
+                        <a href="#" id="delete-layer">Delete Layer</a>
+                        <a href="#" id="merge-layers">Merge Layers</a>
+                    </div>
+                </div>
+                <div class="menu-item" id="select-menu">
+                    <a href="#" class="menu-link">Select</a>
+                    <div class="dropdown-menu">
+                        <a href="#" id="select-all">Select All</a>
+                        <a href="#" id="deselect">Deselect</a>
+                        <a href="#" id="invert-selection">Invert Selection</a>
+                    </div>
+                </div>
+                <div class="menu-item" id="view-menu">
+                    <a href="#" class="menu-link">View</a>
+                    <div class="dropdown-menu">
+                        <a href="#" id="zoom-in">Zoom In</a>
+                        <a href="#" id="zoom-out">Zoom Out</a>
+                        <a href="#" id="reset-view">Reset View</a>
+                    </div>
+                </div>
+                <div class="menu-item" id="help-menu">
+                    <a href="#" class="menu-link">Help</a>
+                    <div class="dropdown-menu">
+                        <a href="#" id="documentation">Documentation</a>
+                        <a href="#" id="keyboard-shortcuts">Keyboard Shortcuts</a>
+                        <a href="#" id="about">About</a>
+                    </div>
+                </div>
+            </nav>
+            <div class="user-actions">
+                <button title="Undo" id="undo-btn" class="action-btn"><i class="fas fa-undo"></i></button>
+                <button title="Redo" id="redo-btn" class="action-btn"><i class="fas fa-redo"></i></button>
+                <button title="Toggle Mode" id="mobile-menu-toggle-btn" class="action-btn mobile-only">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button title="Toggle Theme" id="theme-toggle" class="action-btn"><i class="fas fa-moon"></i></button>
+            </div>
+        </header>
+
+        <aside class="tools-panel">
+            <button class="tool-btn active" data-tool="move" title="Select & Move (V)"><i class="fas fa-mouse-pointer"></i></button>
+            <button class="tool-btn" data-tool="hand" title="Hand Tool (H)"><i class="fas fa-hand-paper"></i></button>
+            <button class="tool-btn" data-tool="zoom" title="Zoom Tool (Z)"><i class="fas fa-search"></i></button>
+            <button class="tool-btn" data-tool="color-picker" title="Color Picker (I)"><i class="fas fa-eye-dropper"></i></button>
+            <hr>
+            <button class="tool-btn" data-tool="brush" title="Brush (B)"><i class="fas fa-paint-brush"></i></button>
+            <button class="tool-btn" data-tool="eraser" title="Eraser (E)"><i class="fas fa-eraser"></i></button>
+            <button class="tool-btn" data-tool="text" title="Text (T)"><i class="fas fa-font"></i></button>
+            <button class="tool-btn" data-tool="shape" data-shape="rect" title="Rectangle Tool"><i class="fas fa-square"></i></button>
+            <button class="tool-btn" data-tool="shape" data-shape="circle" title="Ellipse Tool"><i class="fas fa-circle"></i></button>
+            <hr>
+            <button class="tool-btn" data-tool="crop" title="Crop Tool (C)"><i class="fas fa-crop-alt"></i></button>
+            <button class="tool-btn" data-tool="selection" title="Marquee Selection (M)"><i class="fas fa-vector-square"></i></button>
+            <button class="tool-btn" data-tool="lasso" title="Lasso Tool (L)"><i class="fas fa-lasso-alt"></i></button>
+            <button class="tool-btn" data-tool="wand" title="Magic Wand (W)"><i class="fas fa-magic"></i></button>
+            <hr>
+            <button class="tool-btn" data-tool="clone-stamp" title="Clone Stamp (S)"><i class="fas fa-clone"></i></button>
+            <button class="tool-btn" data-tool="layer-mask" title="Add Layer Mask"><i class="fas fa-mask"></i></button>
+            <hr>
+            <input type="file" id="image-upload" hidden accept="image/*">
+            <button class="tool-btn" id="image-upload-btn" title="Upload Image"><i class="fas fa-upload"></i></button>
+        </aside>
+
+        <main class="canvas-area">
+            <div class="canvas-container" id="canvas-container">
+                <canvas id="main-canvas"></canvas>
+            </div>
+            <div id="crop-actions" class="crop-actions-container">
+                <button id="apply-crop-btn">Apply Crop</button>
+                <button id="cancel-crop-btn">Cancel</button>
+            </div>
+        </main>
+
+        <aside class="right-panels">
+            <!-- AI Generation Panel -->
+            <div class="panel collapsible-panel" id="ai-generation-panel">
+                <div class="panel-header collapsible-header">
+                    <h3 class="panel-title"><i class="fas fa-magic"></i> AI Generation</h3>
+                    <span class="tokens-info">500 Tokens Left</span>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="panel-content collapsible-content">
+                    <div class="prop-group">
+                        <label>Model</label>
+                        <select id="ai-model">
+                            <option value="imagen-3.0-generate-002">Google Imagen 3.0</option>
+                            <option value="imagen-2.0-generate-001">Google Imagen 2.0</option>
+                        </select>
+                    </div>
+                    <div class="prop-group">
+                        <label>Style Presets</label>
+                        <select id="ai-style-preset">
+                            <option value="none">None</option>
+                            <option value="photorealistic">Photorealistic</option>
+                            <option value="anime">Anime</option>
+                            <option value="digital art">Digital Art</option>
+                            <option value="sketch">Sketch</option>
+                            <option value="oil painting">Oil Painting</option>
+                        </select>
+                    </div>
+                    <div class="prop-group">
+                        <label>Aspect Ratio</label>
+                        <select id="ai-aspect-ratio">
+                            <option value="1:1">1:1</option>
+                            <option value="16:9">16:9</option>
+                            <option value="9:16">9:16</option>
+                            <option value="3:2">3:2</option>
+                        </select>
+                    </div>
+                    <div class="prop-group">
+                        <label for="ai-prompt">Prompt</label>
+                        <textarea id="ai-prompt" rows="4" placeholder="Describe the image you want to generate..."></textarea>
+                    </div>
+                    <div class="prop-group">
+                        <label for="ai-negative-prompt">Negative Prompt (Optional)</label>
+                        <textarea id="ai-negative-prompt" rows="2" placeholder="Elements to exclude..."></textarea>
+                    </div>
+                    <div class="prop-group">
+                        <label for="ai-inpainting-prompt">Inpainting Prompt (Optional)</label>
+                        <textarea id="ai-inpainting-prompt" rows="2" placeholder="What to fill into the selected area? (Requires selection on canvas)"></textarea>
+                        <small>Use with an active selection on the canvas. Note: Requires a compatible AI model.</small>
+                    </div>
+                    <div class="prop-group">
+                        <label for="ai-outpainting-prompt">Outpainting Prompt (Optional)</label>
+                        <textarea id="ai-outpainting-prompt" rows="2" placeholder="How to extend the image?"></textarea>
+                        <small>Extend canvas and describe how to fill new areas. Note: Requires a compatible AI model.</small>
+                    </div>
+                    <div class="prop-group">
+                        <label>Number of Images</label>
+                        <input type="number" id="ai-num-images" value="1" min="1" max="4">
+                    </div>
+                    <div class="prop-group">
+                        <label>Sampling Method</label>
+                        <select id="ai-sampling-method">
+                            <option value="euler-a">Euler A</option>
+                            <option value="dpm++-2m">DPM++ 2M</option>
+                            <option value="k-lms">K-LMS</option>
+                        </select>
+                    </div>
+                    <div class="prop-group">
+                        <label>Sampling Steps: <span id="sampling-steps-value">20</span></label>
+                        <input type="range" id="ai-sampling-steps" min="10" max="100" value="20">
+                    </div>
+                    <div class="prop-group">
+                        <label>Guidance Scale: <span id="guidance-scale-value">7</span></label>
+                        <input type="range" id="ai-guidance-scale" min="1" max="20" step="0.5" value="7">
+                    </div>
+                    <div class="prop-group">
+                        <label for="ai-seed">Seed (Optional)</label>
+                        <input type="text" id="ai-seed" placeholder="Leave blank for random">
+                    </div>
+                    <div class="prop-group">
+                        <label>Image to Image</label>
+                        <input type="file" id="ai-image-to-image-upload" accept="image/*">
+                        <small>Upload an image to use as a base for generation.</small>
+                        <img id="ai-img2img-preview" src="" alt="Image to Image Preview" style="max-width:100%; display:none; margin-top:10px;">
+                    </div>
+                    <input type="hidden" id="ai-img2img-base64-data">
+                    <div class="prop-group">
+                        <label>ControlNet (Coming Soon)</label>
+                        <small>Advanced control over image generation based on input image features (e.g., pose, depth).</small>
+                    </div>
+                    <button class="primary-btn" id="generate-ai-image-btn"><i class="fas fa-magic"></i> Generate Image</button>
+                    <button class="primary-btn hidden" id="send-to-edit-btn" style="margin-top:0.75rem;"><i class="fas fa-paint-brush"></i> Send to Canvas for Editing</button>
+                </div>
+            </div>
+
+            <!-- Properties Panel -->
+            <div class="panel collapsible-panel" id="properties-container">
+                <div class="panel-header collapsible-header">
+                    <h3 class="panel-title"><i class="fas fa-sliders-h"></i> Properties</h3>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="panel-content collapsible-content" id="properties-panel-content"></div>
+                <div id="properties-panel-placeholder">
+                    <i class="fas fa-info-circle fa-2x"></i>
+                    <p>Select an object or tool to see its properties here.</p>
+                </div>
+            </div>
+
+            <!-- Layers Panel -->
+            <div class="panel collapsible-panel" id="layers-container">
+                <div class="panel-header collapsible-header">
+                    <h3 class="panel-title"><i class="fas fa-layer-group"></i> Layers</h3>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="panel-content collapsible-content">
+                    <button class="primary-btn" id="add-new-layer-btn" style="margin-bottom: 0.75rem;"><i class="fas fa-plus"></i> Add New Layer</button>
+                    <ul class="layers-list" id="layers-list"></ul>
+                </div>
+            </div>
+        </aside>
+
+        <footer class="bottom-bar">
+            <div class="canvas-size-selector">
+                <label for="canvas-size">Canvas Preset:</label>
+                <select id="canvas-size">
+                    <option value="1080x1080" selected>Instagram Post (1080x1080)</option>
+                    <option value="1280x720">HD Video (1280x720)</option>
+                    <option value="1920x1080">Full HD (1920x1080)</option>
+                    <option value="1000x1500">Pinterest Pin (1000x1500)</option>
+                </select>
+            </div>
+            <div id="zoom-controls">
+                <i class="fas fa-search-minus"></i>
+                <input type="range" id="zoom-slider" min="10" max="400" value="100">
+                <i class="fas fa-search-plus"></i>
+                <span id="zoom-level">100%</span>
+            </div>
+            <div class="action-buttons">
+                <button id="export-btn" class="primary-btn"><i class="fas fa-download"></i> Export as PNG</button>
+            </div>
+        </footer>
+
+        <div id="custom-alert-modal" class="custom-alert-modal">
+            <div class="custom-alert-content">
+                <p id="custom-alert-message"></p>
+                <button id="custom-alert-ok-btn">OK</button>
+            </div>
+        </div>
+
+        <div class="mobile-bottom-bar">
+            <button id="toggle-tools-panel-btn" data-panel="tools" class="active">
+                <i class="fas fa-tools"></i>
+                <span>Tools</span>
+            </button>
+            <button id="toggle-ai-panel-btn" data-panel="ai">
+                <i class="fas fa-magic"></i>
+                <span>AI Gen</span>
+            </button>
+            <button id="toggle-layers-panel-btn" data-panel="layers">
+                <i class="fas fa-layer-group"></i>
+                <span>Layers</span>
+            </button>
+            <button id="toggle-properties-panel-btn" data-panel="properties">
+                <i class="fas fa-sliders-h"></i>
+                <span>Props</span>
+            </button>
+            <button id="mobile-export-btn" class="primary-btn" style="padding: 10px 15px; border-radius: 50%;">
+                <i class="fas fa-download"></i>
+                <span style="display:none;">Export</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Overlay (Hidden by default, shown on mobile when menu icon is tapped) -->
+    <div class="mobile-menu-overlay">
+        <button class="close-btn"><i class="fas fa-times"></i></button>
+        <nav id="mobile-nav-content">
+            <!-- Content will be populated by JavaScript -->
+        </nav>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
