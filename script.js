@@ -414,8 +414,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const clonedItem = menuItem.cloneNode(true);
             const dropdown = clonedItem.querySelector('.dropdown-menu');
             if (dropdown) {
-                dropdown.style.display = 'flex';
+                // Ensure dropdowns are visible within the mobile menu
+                dropdown.style.opacity = 1;
+                dropdown.style.visibility = 'visible';
+                dropdown.style.transform = 'translateY(0)';
                 dropdown.classList.add('mobile-dropdown-menu');
+            }
+            // Remove desktop menu specific event listeners to prevent conflicts
+            const menuLink = clonedItem.querySelector('.menu-link');
+            if (menuLink) {
+                menuLink.replaceWith(menuLink.cloneNode(true)); // Replaces the node to remove event listeners
             }
             clonedItem.removeEventListener('mouseenter', () => {});
             clonedItem.removeEventListener('mouseleave', () => {});
@@ -1286,10 +1294,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function setAppMode(mode) {
         mainLayout.dataset.appMode = mode;
         if (window.innerWidth > 768) {
+            // For desktop, explicitly manage panel collapse based on app mode
             if (mode === 'generate') {
                 aiGenerationPanel.classList.remove('collapsed');
-            } else {
+                document.getElementById('layers-container').classList.add('collapsed');
+                document.getElementById('properties-container').classList.add('collapsed');
+
+            } else { // mode === 'edit'
                 aiGenerationPanel.classList.add('collapsed');
+                // Ensure other panels are not collapsed if they were open previously
+                document.getElementById('layers-container').classList.remove('collapsed');
+                document.getElementById('properties-container').classList.remove('collapsed');
             }
         }
     }
@@ -1345,25 +1360,44 @@ document.addEventListener('DOMContentLoaded', () => {
             const dropdownMenu = item.querySelector('.dropdown-menu');
 
             if (menuLink && dropdownMenu) {
-                let timeout;
-                item.addEventListener('mouseenter', () => {
-                    clearTimeout(timeout);
+                // Use mouseover/mouseout for smooth hover effect
+                item.addEventListener('mouseover', () => {
                     if (window.innerWidth > 768) {
-                        dropdownMenu.style.display = 'flex';
+                        item.classList.add('open-dropdown');
                     }
                 });
 
-                item.addEventListener('mouseleave', () => {
+                item.addEventListener('mouseout', (e) => {
                     if (window.innerWidth > 768) {
-                        timeout = setTimeout(() => {
-                            dropdownMenu.style.display = 'none';
-                        }, 200);
+                        // Check if the mouse is moving outside the menu item or its dropdown
+                        // This prevents closing if moving from menu item to dropdown
+                        if (!item.contains(e.relatedTarget)) {
+                            item.classList.remove('open-dropdown');
+                        }
                     }
                 });
 
-                document.addEventListener('click', (event) => {
-                    if (window.innerWidth > 768 && !item.contains(event.target)) {
-                        dropdownMenu.style.display = 'none';
+                // Click event to toggle for accessibility and if hover fails
+                menuLink.addEventListener('click', (e) => {
+                    e.preventDefault(); // Prevent default link behavior
+                    if (window.innerWidth > 768) {
+                        menuItems.forEach(otherItem => {
+                            if (otherItem !== item) {
+                                otherItem.classList.remove('open-dropdown'); // Close other dropdowns
+                            }
+                        });
+                        item.classList.toggle('open-dropdown');
+                    }
+                });
+            }
+        });
+
+        // Close all dropdowns when clicking anywhere outside a menu item
+        document.addEventListener('click', (event) => {
+            if (window.innerWidth > 768) {
+                menuItems.forEach(item => {
+                    if (!item.contains(event.target)) {
+                        item.classList.remove('open-dropdown');
                     }
                 });
             }
