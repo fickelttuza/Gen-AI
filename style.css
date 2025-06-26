@@ -42,12 +42,36 @@ body {
     font-family: 'Inter', sans-serif;
     background-color: var(--background-dark);
     color: var(--text-primary);
-    overflow: hidden;
+    overflow: hidden; /* Prevent body scrollbars */
     display: flex;
     flex-direction: column;
     height: 100vh;
     transition: background-color var(--transition-speed);
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+body::-webkit-scrollbar,
+.tools-panel::-webkit-scrollbar,
+.right-panels::-webkit-scrollbar,
+.mobile-menu-overlay::-webkit-scrollbar,
+#layers-list::-webkit-scrollbar,
+.panel-content::-webkit-scrollbar {
+    display: none; /* Hide scrollbar visually */
+    width: 0;
+    height: 0;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+body,
+.tools-panel,
+.right-panels,
+.mobile-menu-overlay,
+#layers-list,
+.panel-content {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
 
 .main-layout {
     display: grid;
@@ -58,19 +82,12 @@ body {
         "tools canvas panels"
         "footer footer footer";
     height: 100vh;
-    overflow: hidden;
+    overflow: hidden; /* Ensure main layout doesn't cause scrollbars */
 }
 
 /* --- Responsive Grid --- */
 @media (min-width: 769px) {
-    .main-layout[data-app-mode="edit"] {
-        grid-template-columns: 80px 1fr 350px;
-        grid-template-areas:
-            "header header header"
-            "tools canvas panels"
-            "footer footer footer";
-    }
-
+    .main-layout[data-app-mode="edit"],
     .main-layout[data-app-mode="generate"] {
         grid-template-columns: 80px 1fr 350px;
         grid-template-areas:
@@ -87,18 +104,16 @@ body {
     justify-content: space-between;
     align-items: center;
     background-color: var(--background-light);
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 2rem; /* Increased padding */
     border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* More prominent shadow */
     z-index: 1000;
-    position: sticky;
-    top: 0;
-    width: 100%;
+    position: relative; /* Changed to relative for modern menu */
 }
 
 .top-menu-bar .logo {
     font-weight: 700;
-    font-size: 1.25rem;
+    font-size: 1.4rem; /* Slightly larger */
     color: var(--primary-color);
     display: flex;
     align-items: center;
@@ -107,21 +122,19 @@ body {
 
 .top-menu-bar nav {
     display: flex;
-    gap: 1.5rem;
+    gap: 2rem; /* Increased gap */
 }
 
 .top-menu-bar .menu-item {
     position: relative;
-    /* Add this to ensure dropdowns are not hidden by overflow */
-    overflow: visible;
+    /* Removed overflow: visible as it's not needed with modern dropdown */
 }
-
 
 .top-menu-bar .menu-link {
     color: var(--text-primary);
     text-decoration: none;
     font-weight: 500;
-    padding: 0.5rem 0;
+    padding: 0.75rem 0; /* Increased padding */
     transition: color var(--transition-speed);
 }
 
@@ -131,21 +144,33 @@ body {
 
 .top-menu-bar .dropdown-menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 5px); /* Slightly offset from menu link */
     left: 0;
     background-color: var(--panel-bg);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    min-width: 180px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25); /* Deeper shadow */
+    min-width: 200px; /* Slightly wider */
     z-index: 10;
-    display: none;
+    display: flex; /* Always flex, control visibility with opacity/pointer-events */
     flex-direction: column;
     padding: 0.5rem 0;
+    opacity: 0; /* Hidden by default */
+    visibility: hidden; /* Hidden by default */
+    pointer-events: none; /* Disables interaction when hidden */
+    transform: translateY(10px); /* Initial slight offset */
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0.2s ease-out;
+}
+
+.top-menu-bar .menu-item.open-dropdown .dropdown-menu {
+    opacity: 1; /* Show when open */
+    visibility: visible; /* Show when open */
+    pointer-events: auto; /* Enable interaction when open */
+    transform: translateY(0); /* Slide into place */
 }
 
 .top-menu-bar .dropdown-menu a {
-    padding: 0.75rem 1rem;
+    padding: 0.85rem 1.25rem; /* Increased padding */
     color: var(--text-secondary);
     text-decoration: none;
     transition: background-color var(--transition-speed), color var(--transition-speed);
@@ -156,33 +181,36 @@ body {
     color: var(--primary-color);
 }
 
-.top-menu-bar .menu-item:hover .dropdown-menu {
-    display: flex;
-}
+/* Removed .top-menu-bar .menu-item:hover .dropdown-menu */
 
 .top-menu-bar .user-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 1rem; /* Increased gap */
 }
 
 .top-menu-bar .action-btn {
     background: none;
     border: none;
     color: var(--text-primary);
-    font-size: 1.1rem;
+    font-size: 1.25rem; /* Slightly larger icons */
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0.75rem; /* Larger hit area */
     border-radius: var(--border-radius);
-    transition: background-color var(--transition-speed), color var(--transition-speed);
+    transition: background-color var(--transition-speed), color var(--transition-speed), transform 0.1s ease-out;
 }
 
 .top-menu-bar .action-btn:hover {
     background-color: var(--background-light);
     color: var(--primary-color);
+    transform: translateY(-2px); /* Subtle lift on hover */
+}
+.top-menu-bar .action-btn:active {
+    transform: translateY(0); /* Press effect */
 }
 
+
 .top-menu-bar .action-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.4; /* Slightly less opaque when disabled */
     cursor: not-allowed;
 }
 
@@ -199,61 +227,70 @@ body {
     flex-direction: column;
     align-items: center;
     padding: 1rem 0;
-    gap: 0.5rem;
-    overflow-y: auto;
-    overflow-x: hidden; /* Added to hide horizontal scrollbar */
+    gap: 0.75rem; /* Increased gap between buttons */
+    overflow-y: auto; /* Allow scrolling if content overflows */
+    overflow-x: hidden;
+    height: 100%; /* Ensure it takes full height */
+    box-sizing: border-box; /* Include padding in height */
 }
 
 .tools-panel .tool-btn {
-    background: none;
+    background: none; /* No background */
     border: none;
     color: var(--text-secondary);
-    width: 50px;
-    height: 50px;
+    width: 60px; /* Slightly wider buttons */
+    height: 60px; /* Slightly taller buttons */
     border-radius: var(--border-radius);
-    font-size: 1.25rem;
+    font-size: 1.4rem; /* Larger icons */
     cursor: pointer;
-    transition: background-color var(--transition-speed), color var(--transition-speed);
+    transition: color var(--transition-speed), transform 0.1s ease-out; /* Only color transition */
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
 }
 
-.tools-panel .tool-btn:hover,
+.tools-panel .tool-btn:hover {
+    color: var(--primary-color); /* Highlight text color on hover */
+    transform: scale(1.1); /* Subtle grow effect */
+}
+
 .tools-panel .tool-btn.active {
-    background-color: var(--primary-color);
-    color: var(--text-primary);
+    color: var(--primary-color); /* Active state is primary color */
+    font-weight: 700; /* Make icon bold */
+    /* Removed background-color and box-shadow */
 }
 
 .tools-panel hr {
     width: 60%;
     border: none;
     border-top: 1px solid var(--border-color);
-    margin: 0.5rem 0;
+    margin: 0.75rem 0; /* More margin */
 }
 
 .tools-panel .tool-btn::after {
     content: attr(title);
     position: absolute;
-    left: calc(100% + 10px);
+    left: calc(100% + 15px); /* More offset */
     top: 50%;
     transform: translateY(-50%);
     background-color: var(--background-dark);
     color: var(--text-primary);
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 1rem; /* Larger padding */
     border-radius: var(--border-radius);
     white-space: nowrap;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
     z-index: 10;
-    font-size: 0.9rem;
+    font-size: 0.95rem; /* Slightly larger font */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow to tooltip */
 }
 
 .tools-panel .tool-btn:hover::after {
     opacity: 1;
     visibility: visible;
+    transform: translateY(-50%) translateX(0); /* Slide in effect */
 }
 
 
@@ -264,7 +301,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow: hidden; /* Crucial for preventing scrollbars here */
     position: relative;
 }
 
@@ -285,7 +322,7 @@ body {
 
 #main-canvas {
     border: 1px solid var(--border-color);
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.4); /* Stronger shadow */
     max-width: 100%;
     max-height: 100%;
 }
@@ -298,14 +335,14 @@ body {
     display: none;
     gap: 10px;
     background-color: var(--panel-bg);
-    padding: 0.75rem 1.25rem;
+    padding: 0.85rem 1.5rem; /* Increased padding */
     border-radius: var(--border-radius);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.35); /* Deeper shadow */
     z-index: 500;
 }
 
 .crop-actions-container button {
-    padding: 0.6rem 1.2rem;
+    padding: 0.75rem 1.5rem; /* Increased padding */
     border-radius: var(--border-radius);
     border: none;
     cursor: pointer;
@@ -337,10 +374,12 @@ body {
     border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
-    overflow-y: auto;
+    gap: 1.5rem; /* Increased gap between panels */
+    padding: 1.5rem; /* Increased padding */
+    overflow-y: auto; /* Allow scrolling if content overflows */
     flex-shrink: 0;
+    height: 100%; /* Ensure it takes full height */
+    box-sizing: border-box; /* Include padding in height */
 }
 
 .panel {
@@ -351,13 +390,14 @@ body {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
 }
 
 .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.25rem; /* Increased padding */
     background-color: var(--panel-bg);
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
@@ -367,14 +407,14 @@ body {
 
 .panel-header .panel-title {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.1rem; /* Slightly larger */
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem; /* Increased gap */
 }
 
 .panel-header .tokens-info {
-    font-size: 0.8rem;
+    font-size: 0.85rem; /* Slightly larger */
     color: var(--text-secondary);
 }
 
@@ -383,10 +423,10 @@ body {
 }
 
 .panel-content {
-    padding: 1rem;
+    padding: 1.25rem; /* Increased padding */
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1rem; /* Increased gap */
     transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding-bottom 0.3s ease-out;
     max-height: 1000px; /* A large value for 'open' state */
     opacity: 1;
@@ -417,15 +457,15 @@ body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 2rem;
+    padding: 2.5rem; /* More padding */
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 1rem; /* Slightly larger */
     gap: 0.75rem;
-    min-height: 150px;
+    min-height: 180px; /* Taller placeholder */
 }
 
 #properties-panel-placeholder .fas {
-    font-size: 2rem;
+    font-size: 2.5rem; /* Larger icon */
     color: var(--border-color);
 }
 
@@ -433,11 +473,11 @@ body {
 .prop-group {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.5rem; /* Increased gap */
 }
 
 .prop-group label {
-    font-size: 0.9rem;
+    font-size: 0.95rem; /* Slightly larger */
     color: var(--text-secondary);
     font-weight: 500;
 }
@@ -449,69 +489,70 @@ body {
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 0.9rem; /* Increased padding */
     color: var(--text-primary);
-    font-size: 0.9rem;
-    width: calc(100% - 1.5rem);
+    font-size: 0.95rem; /* Slightly larger */
+    width: calc(100% - 1.8rem); /* Adjust width for padding */
 }
 
 .prop-group input[type="range"] {
     -webkit-appearance: none;
     width: 100%;
-    height: 8px;
+    height: 10px; /* Thicker slider */
     background: var(--border-color);
     border-radius: 5px;
     outline: none;
-    opacity: 0.7;
+    opacity: 0.8; /* Less transparent */
     transition: opacity .2s;
 }
 
 .prop-group input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 18px;
-    height: 18px;
+    width: 20px; /* Larger thumb */
+    height: 20px; /* Larger thumb */
     border-radius: 50%;
     background: var(--primary-color);
     cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Add shadow to thumb */
 }
 
 .prop-group input[type="color"] {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    width: 60px;
-    height: 30px;
+    width: 70px; /* Wider */
+    height: 35px; /* Taller */
     background-color: transparent;
     border: none;
     cursor: pointer;
 }
 .prop-group input[type="color"]::-webkit-color-swatch {
-    border-radius: 5px;
+    border-radius: 6px; /* More rounded */
     border: 1px solid var(--border-color);
 }
 .prop-group input[type="color"]::-moz-color-swatch {
-    border-radius: 5px;
+    border-radius: 6px;
     border: 1px solid var(--border-color);
 }
 
 .prop-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
+    gap: 1rem; /* Increased gap */
 }
 
 /* --- Buttons (General) --- */
 .primary-btn, .secondary-btn {
-    padding: 0.75rem 1.5rem;
+    padding: 0.85rem 1.8rem; /* Increased padding */
     border-radius: var(--border-radius);
     font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--transition-speed), color var(--transition-speed);
+    transition: background-color var(--transition-speed), color var(--transition-speed), transform 0.1s ease-out, box-shadow 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.6rem; /* Increased gap */
     width: 100%;
     box-sizing: border-box;
     border: 1px solid transparent;
@@ -521,10 +562,17 @@ body {
     background-color: var(--primary-color);
     color: var(--text-primary);
     border-color: var(--primary-color);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Subtle shadow */
 }
 .primary-btn:hover {
     background-color: #6a4ec7;
     border-color: #6a4ec7;
+    transform: translateY(-2px); /* Lift effect */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+.primary-btn:active {
+    transform: translateY(0); /* Press effect */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .secondary-btn {
@@ -535,6 +583,10 @@ body {
 .secondary-btn:hover {
     background-color: var(--primary-color);
     color: var(--text-primary);
+    transform: translateY(-2px);
+}
+.secondary-btn:active {
+    transform: translateY(0);
 }
 
 .hidden {
@@ -554,11 +606,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.6rem 0.75rem;
+    padding: 0.75rem 1rem; /* Increased padding */
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.6rem; /* Slightly more margin */
     cursor: pointer;
     transition: background-color var(--transition-speed), border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -569,13 +621,13 @@ body {
 
 .layer-item.selected {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color), 0 0 5px rgba(127, 90, 240, 0.3); /* Add glow effect */
 }
 
 .layer-item .layer-name {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem; /* Slightly more gap */
     font-weight: 500;
     flex-grow: 1;
     overflow: hidden;
@@ -587,34 +639,34 @@ body {
     background: none;
     border: none;
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 1rem; /* Slightly larger */
     cursor: pointer;
-    padding: 0.3rem;
-    border-radius: 4px;
+    padding: 0.4rem; /* Larger hit area */
+    border-radius: 5px; /* More rounded */
     transition: color var(--transition-speed), background-color var(--transition-speed);
 }
 
 .layer-item .layer-controls button:hover {
     color: var(--primary-color);
-    background-color: rgba(127, 90, 240, 0.1);
+    background-color: rgba(127, 90, 240, 0.15); /* More visible hover */
 }
 
 .layer-item.hidden-layer .layer-name {
-    opacity: 0.6;
+    opacity: 0.5; /* Less opaque */
     font-style: italic;
 }
 .layer-item.locked-layer .layer-name {
-    opacity: 0.7;
+    opacity: 0.6; /* Less opaque */
 }
 
 /* Dragging styles */
 .layer-item.dragging {
-    opacity: 0.5;
+    opacity: 0.6; /* Slightly less opaque when dragging */
     border: 2px dashed var(--primary-color);
 }
 
 .layer-item.drag-over {
-    background-color: rgba(127, 90, 240, 0.2);
+    background-color: rgba(127, 90, 240, 0.25); /* More visible drag over */
 }
 
 .layer-actions {
@@ -628,37 +680,35 @@ body {
     grid-area: footer;
     background-color: var(--background-light);
     border-top: 1px solid var(--border-color);
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 2rem; /* Increased padding */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    gap: 1.5rem; /* Increased gap */
     flex-wrap: wrap;
     z-index: 1000;
-    position: sticky;
-    bottom: 0;
-    width: 100%;
+    position: relative; /* Relative for dynamic positioning */
 }
 
 .zoom-controls, .canvas-size-selector {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem; /* Increased gap */
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 0.95rem; /* Slightly larger */
 }
 
 .zoom-controls input[type="range"] {
-    width: 120px;
+    width: 150px; /* Wider slider */
 }
 
 .canvas-size-selector select {
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 0.4rem 0.6rem;
+    padding: 0.5rem 0.8rem; /* Increased padding */
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: 0.95rem; /* Slightly larger */
 }
 
 /* --- Custom Alert Modal --- */
@@ -668,7 +718,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.75); /* Darker overlay */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -678,32 +728,32 @@ body {
 
 .custom-alert-content {
     background-color: var(--panel-bg);
-    padding: 2rem;
+    padding: 2.5rem; /* More padding */
     border-radius: var(--border-radius);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); /* Deeper shadow */
     text-align: center;
-    max-width: 400px;
+    max-width: 450px; /* Wider modal */
     width: 90%;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.8rem; /* Increased gap */
     align-items: center;
 }
 
 .custom-alert-content p {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1.2rem; /* Larger font */
     color: var(--text-primary);
 }
 
 .custom-alert-content button {
-    padding: 0.8rem 1.8rem;
+    padding: 0.9rem 2rem; /* Larger button */
     background-color: var(--primary-color);
     color: var(--text-primary);
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 1.05rem; /* Slightly larger font */
     font-weight: 600;
     transition: background-color var(--transition-speed);
 }
