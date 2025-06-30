@@ -1,1409 +1,2406 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // --- AI API KEY (Provided by user) ---
-    // Note: In a real application, this should be handled securely on the backend.
-    const AI_API_KEY = ''; 
+// ===== GLOBAL VARIABLES =====
+let canvas;
+let currentTool = 'select';
+let currentColor = '#800080';
+let brushSize = 10;
+let isDrawing = false;
+let history = [];
+let historyStep = -1;
+let layers = [];
+let currentLayer = null;
+let selectedObject = null;
+let clipboard = null;
+let zoomLevel = 100;
+let gridVisible = false;
+let rulersVisible = false;
+let cropMode = false;
+let cropRect = null;
+
+// Touch and gesture variables
+let lastTouchDistance = 0;
+let initialPinchZoom = 1;
+let touchStartTime = 0;
+let touchStartPos = { x: 0, y: 0 };
+let isPanning = false;
+let lastPanPoint = { x: 0, y: 0 };
+let panStartPoint = { x: 0, y: 0 };
+let gestureStartZoom = 1;
+
+// UI state variables
+let toolbarHideTimeout = null;
+let isToolbarVisible = true;
+
+// Mobile panel states
+let mobilePanelStates = {
+    'tools-panel': false,
+    'layers-container': false,
+    'properties-container': false,
+    'ai-panel': false
+};
+
+// ===== INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', function() {
+    init();
+});
+
+function init() {
+    // Initialize canvas
+    initializeCanvas();
     
-    // --- DOM ELEMENT REFERENCES ---
-    const mainLayout = document.querySelector('.main-layout');
-    const canvasContainer = document.getElementById('canvas-container');
-    const layersListEl = document.getElementById('layers-list');
-    const propertiesPanelContent = document.getElementById('properties-panel-content');
-    const propertiesPanelPlaceholder = document.getElementById('properties-panel-placeholder');
-    const toolButtons = document.querySelectorAll('.tool-btn');
-    const imageUploadInput = document.getElementById('image-upload');
-    const imageUploadBtn = document.getElementById('image-upload-btn');
-    const exportBtn = document.getElementById('export-btn');
-    const mobileExportBtn = document.getElementById('mobile-export-btn');
-    const canvasSizeSelect = document.getElementById('canvas-size');
-    const zoomSlider = document.getElementById('zoom-slider');
-    const zoomLevelEl = document.getElementById('zoom-level');
-    const cropActionsContainer = document.getElementById('crop-actions');
-    const applyCropBtn = document.getElementById('apply-crop-btn');
-    const cancelCropBtn = document.getElementById('cancel-crop-btn');
-    const themeToggleBtn = document.getElementById('theme-toggle');
-    const addLayerBtn = document.getElementById('add-new-layer-btn');
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Setup template selection
+    setupTemplateSelection();
+    
+    // Setup tools
+    setupTools();
+    
+    // Setup panels
+    setupPanels();
+    
+    // Setup keyboard shortcuts
+    setupKeyboardShortcuts();
+    
+    // Setup theme
+    setupTheme();
+    
+    // Setup mobile interface
+    setupMobileInterface();
+    
+    // Setup touch and gesture handling
+    setupTouchHandling();
+    
+    // Setup zoom functionality
+    setupZoomFunctionality();
+    
+    // Initialize default layer
+    addNewLayer('Background');
+    
+    // Add ripple effects to buttons
+    addRippleEffects();
+    
+    console.log('Visual Composer Pro initialized successfully');
+}
 
-    // AI Generation Panel Elements
-    const aiGenerationPanel = document.getElementById('ai-generation-panel');
-    const generateAiImageBtn = document.getElementById('generate-ai-image-btn');
-    const sendToEditBtn = document.getElementById('send-to-edit-btn');
-    const mobileMenuToggleBtn = document.getElementById('mobile-menu-toggle-btn');
-    const aiModelSelect = document.getElementById('ai-model');
-    const aiStylePresetSelect = document.getElementById('ai-style-preset');
-    const aiAspectRatioSelect = document.getElementById('ai-aspect-ratio');
-    const aiPromptInput = document.getElementById('ai-prompt');
-    const aiNegativePromptInput = document.getElementById('ai-negative-prompt');
-    const aiInpaintingPromptInput = document.getElementById('ai-inpainting-prompt');
-    const aiOutpaintingPromptInput = document.getElementById('ai-outpainting-prompt');
-    const aiNumImagesInput = document.getElementById('ai-num-images');
-    const aiSamplingMethodSelect = document.getElementById('ai-sampling-method');
-    const aiSamplingStepsInput = document.getElementById('ai-sampling-steps');
-    const samplingStepsValueEl = document.getElementById('sampling-steps-value');
-    const aiGuidanceScaleInput = document.getElementById('ai-guidance-scale');
-    const guidanceScaleValueEl = document.getElementById('guidance-scale-value');
-    const aiSeedInput = document.getElementById('ai-seed');
-    const aiImageToImageUpload = document.getElementById('ai-image-to-image-upload');
-    const aiImg2ImgPreview = document.getElementById('ai-img2img-preview');
-    const aiImg2ImgBase64Data = document.getElementById('ai-img2img-base64-data');
+// ===== CANVAS INITIALIZATION =====
+function initializeCanvas() {
+    const canvasElement = document.getElementById('main-canvas');
+    canvas = new fabric.Canvas(canvasElement, {
+        width: 800,
+        height: 600,
+        backgroundColor: '#ffffff',
+        selection: true,
+        preserveObjectStacking: true,
+        allowTouchScrolling: false,
+        enableRetinaScaling: true
+    });
+    
+    // Canvas event listeners
+    canvas.on('selection:created', handleObjectSelection);
+    canvas.on('selection:updated', handleObjectSelection);
+    canvas.on('selection:cleared', handleObjectDeselection);
+    canvas.on('object:modified', saveCanvasState);
+    canvas.on('object:added', saveCanvasState);
+    canvas.on('object:removed', saveCanvasState);
+    canvas.on('path:created', saveCanvasState);
+    
+    // Mouse events for drawing
+    canvas.on('mouse:down', handleMouseDown);
+    canvas.on('mouse:move', handleMouseMove);
+    canvas.on('mouse:up', handleMouseUp);
+    
+    updateCanvasInfo();
+    saveCanvasState();
+    
+    // Fit canvas to screen initially
+    setTimeout(() => {
+        fitToScreen();
+    }, 100);
+}
 
-    // Collapsible Panels
-    const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
-    const allCollapsiblePanels = document.querySelectorAll('.collapsible-panel'); // All panels that can collapse
-    const rightPanelsContainer = document.querySelector('.right-panels');
-    const desktopNav = document.getElementById('desktop-nav'); // Reference to desktop nav
-    const toolsPanel = document.querySelector('.tools-panel'); // Reference to tools panel
+// ===== ZOOM FUNCTIONALITY =====
+function setupZoomFunctionality() {
+    const canvasElement = document.getElementById('main-canvas');
+    let zoom = 1;
 
-    // Mobile Bottom Bar Elements
-    const mobileBottomBar = document.querySelector('.mobile-bottom-bar');
-    const toggleToolsPanelBtn = document.getElementById('toggle-tools-panel-btn');
-    const undoBtn = document.getElementById('undo-btn');
-    const redoBtn = document.getElementById('redo-btn');
-
-    // Mobile Menu Overlay Elements
-    const mobileMenuOverlay = document.querySelector('.mobile-menu-overlay');
-    const mobileMenuCloseBtn = document.querySelector('.mobile-menu-overlay .close-btn');
-    const mobileNavContent = document.getElementById('mobile-nav-content');
-
-    let canvas;
-    let activeTool = 'select'; // Default tool
-    let cropRect = null;
-    let currentSelectionRect = null;
-    let isDrawingSelection = false;
-    let isPanningCanvas = false; // Flag for hand tool / middle mouse button panning
-    let lastPanPosX, lastPanPosY;
-    let cloneSource = null;
-    let colorPickerActive = false;
-    let isDrawingShape = false;
-    let startX, startY;
-    let currentShape = null;
-
-    // --- HISTORY MANAGEMENT ---
-    const MAX_HISTORY_STEPS = 10;
-    let history = [];
-    let historyPointer = -1;
-    let isSavingHistory = false;
-
-    function saveCanvasState() {
-        if (isSavingHistory) return;
-        isSavingHistory = true;
-
-        if (historyPointer < history.length - 1) {
-            history = history.slice(0, historyPointer + 1);
-        }
-
-        const state = JSON.stringify(canvas.toJSON());
-        history.push(state);
-
-        if (history.length > MAX_HISTORY_STEPS) {
-            history.shift();
-        }
-        historyPointer = history.length - 1;
-        updateHistoryButtons();
-        isSavingHistory = false;
-    }
-
-    function loadCanvasState(state) {
-        isSavingHistory = true;
-        canvas.loadFromJSON(state, () => {
-            canvas.renderAll();
-            updateUI(null, false);
-            isSavingHistory = false;
-        });
-    }
-
-    function undo() {
-        if (historyPointer > 0) {
-            historyPointer--;
-            loadCanvasState(history[historyPointer]);
-            updateHistoryButtons();
-        }
-    }
-
-    function redo() {
-        if (historyPointer < history.length - 1) {
-            historyPointer++;
-            loadCanvasState(history[historyPointer]);
-            updateHistoryButtons();
-        }
-    }
-
-    function updateHistoryButtons() {
-        undoBtn.disabled = (historyPointer <= 0);
-        redoBtn.disabled = (historyPointer >= history.length - 1);
-    }
-
-    // --- INITIALIZATION ---
-    function initializeCanvas() {
-        const { width, height } = getCanvasSize();
-        canvas = new fabric.Canvas('main-canvas', {
-            width: width,
-            height: height,
-            backgroundColor: '#ffffff',
-            selection: true,
-            preserveObjectStacking: true
-        });
-
-        canvas.on('object:modified', () => updateUI(null, true));
-        canvas.on('object:added', () => updateUI(null, true));
-        canvas.on('object:removed', () => updateUI(null, true));
-        canvas.on('selection:created', (e) => updateUI(e, false));
-        canvas.on('selection:updated', (e) => updateUI(e, false));
-        canvas.on('selection:cleared', () => updateUI(null, false));
-
-        resizeCanvasToFitContainer();
-        setupCanvasListeners();
-        setupEventListeners();
-        setupThemeToggle();
-        setupCollapsiblePanels();
-        setupMenuSystem(); // For desktop dropdowns
-        setupDraggablePanels();
-
-        updateLayersPanel();
-        updatePropertiesPanel();
-        setActiveTool('select'); // Ensure the initial tool is 'select'
-        updateZoomUI(canvas.getZoom());
-
-        if (canvas.getObjects().length === 0) {
-            const rect = new fabric.Rect({
-                left: 100, top: 100, fill: '#7f5af0', width: 200, height: 150,
-                name: 'Initial Shape', rx: 0, ry: 0
-            });
-            canvas.add(rect);
-            canvas.centerObject(rect);
-            canvas.setActiveObject(rect);
-            saveCanvasState();
+    function applyZoom() {
+        canvasElement.style.transform = `scale(${zoom})`;
+        canvasElement.style.transformOrigin = "center center";
+        const zoomDisplay = document.getElementById('zoom-level');
+        if (zoomDisplay) {
+            zoomDisplay.innerText = `${Math.round(zoom * 100)}%`;
         }
         
-        // Initial app mode based on screen width
-        handleResize(); // Call on load to set initial mobile/desktop layout
-        updateHistoryButtons();
-    }
-
-    // --- CANVAS & UI EVENT LISTENERS ---
-    function setupCanvasListeners() {
-        canvas.on({
-            'mouse:wheel': handleMouseWheel,
-            'mouse:down': handleMouseDown,
-            'mouse:move': handleMouseMove,
-            'mouse:up': handleMouseUp,
-            'touch:gesture': handleTouchGesture,
-            'touch:drag': handleTouchDrag,
-        });
-    }
-
-    // Basic touch gesture for pinch-to-zoom
-    function handleTouchGesture(opt) {
-        const gesture = opt.e;
-        if (gesture.touches && gesture.touches.length === 2) {
-            const point = new fabric.Point(gesture.touches[0].clientX, gesture.touches[0].clientY);
-            let zoom = canvas.getZoom();
-            if (gesture.scale !== 1) {
-                zoom *= gesture.scale;
-                if (zoom > 20) zoom = 20;
-                if (zoom < 0.1) zoom = 0.1;
-                canvas.zoomToPoint(point, zoom);
-                updateZoomUI(zoom);
-                gesture.preventDefault();
-                gesture.stopPropagation();
-            }
+        // Update zoom slider
+        const zoomSlider = document.getElementById('zoom-slider');
+        if (zoomSlider) {
+            zoomSlider.value = Math.round(zoom * 100);
         }
+        
+        // Update global zoom level
+        zoomLevel = Math.round(zoom * 100);
+        
+        // Update zoom buttons
+        updateZoomButtons();
     }
 
-    let isTouchPanning = false;
-    let lastTouchPosX, lastTouchPosY;
+    // Zoom controls
+    document.getElementById('zoom-in').onclick = () => {
+        zoom = Math.min(zoom + 0.1, 3);
+        applyZoom();
+    };
 
-    // Basic touch drag for panning
-    function handleTouchDrag(opt) {
-        const e = opt.e;
-        if (e.touches && e.touches.length === 1) {
-            if (!isTouchPanning) {
-                isTouchPanning = true;
-                lastTouchPosX = e.touches[0].clientX;
-                lastTouchPosY = e.touches[0].clientY;
-            } else {
-                const vpt = canvas.viewportTransform;
-                vpt[4] += e.touches[0].clientX - lastTouchPosX;
-                vpt[5] += e.touches[0].clientY - lastTouchPosY;
-                canvas.requestRenderAll();
-                lastTouchPosX = e.touches[0].clientX;
-                lastTouchPosY = e.touches[0].clientY;
-            }
+    document.getElementById('zoom-out').onclick = () => {
+        zoom = Math.max(zoom - 0.1, 0.1);
+        applyZoom();
+    };
+
+    document.getElementById('zoom-100').onclick = () => {
+        zoom = 1;
+        applyZoom();
+    };
+
+    // Fit to screen
+    document.getElementById('zoom-fit').onclick = () => {
+        const container = document.getElementById('canvas-container');
+        const containerRect = container.getBoundingClientRect();
+        const canvasRect = canvasElement.getBoundingClientRect();
+        
+        const scaleX = (containerRect.width - 80) / canvasElement.width;
+        const scaleY = (containerRect.height - 80) / canvasElement.height;
+        zoom = Math.min(scaleX, scaleY, 1);
+        applyZoom();
+    };
+
+    // Mouse Wheel Zoom (Desktop)
+    canvasElement.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) {
             e.preventDefault();
-            e.stopPropagation();
-        } else {
-            isTouchPanning = false;
+            zoom += e.deltaY > 0 ? -0.1 : 0.1;
+            zoom = Math.min(Math.max(zoom, 0.1), 3);
+            applyZoom();
         }
+    });
+
+    // Touch Pinch Zoom (Mobile)
+    let lastDistance = null;
+    canvasElement.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (lastDistance !== null) {
+                const delta = distance - lastDistance;
+                zoom += delta * 0.002;
+                zoom = Math.min(Math.max(zoom, 0.1), 3);
+                applyZoom();
+            }
+            lastDistance = distance;
+        }
+    });
+
+    canvasElement.addEventListener('touchend', () => {
+        lastDistance = null;
+    });
+
+    // Zoom slider
+    const zoomSlider = document.getElementById('zoom-slider');
+    if (zoomSlider) {
+        zoomSlider.addEventListener('input', (e) => {
+            zoom = parseInt(e.target.value) / 100;
+            applyZoom();
+        });
     }
 
-    function setupEventListeners() {
-        window.addEventListener('resize', handleResize);
-        toolButtons.forEach(btn => btn.addEventListener('click', () => {
-            handleToolClick(btn.dataset.tool, btn.dataset.shape);
-        }));
-        imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
-        imageUploadInput.addEventListener('change', handleImageUpload);
-        exportBtn.addEventListener('click', exportCanvas);
-        mobileExportBtn.addEventListener('click', exportCanvas);
-        canvasSizeSelect.addEventListener('change', changeCanvasSize);
-        zoomSlider.addEventListener('input', handleZoomSlider);
-        applyCropBtn.addEventListener('click', applyCrop);
-        cancelCropBtn.addEventListener('click', cancelCrop);
-        document.addEventListener('keydown', handleKeyDown);
-        themeToggleBtn.addEventListener('click', toggleTheme);
-        undoBtn.addEventListener('click', undo);
-        redoBtn.addEventListener('click', redo);
-        generateAiImageBtn.addEventListener('click', generateImage);
-        sendToEditBtn.addEventListener('click', () => {
-            const imgUrl = aiImg2ImgPreview.src;
-            if (imgUrl) {
-                fabric.Image.fromURL(imgUrl, (img) => {
-                    img.set({ name: 'AI Generated Image' });
-                    img.scaleToWidth(canvas.getWidth() * 0.8);
-                    canvas.add(img);
-                    img.center();
-                    canvas.setActiveObject(img);
-                    canvas.renderAll();
-                    updateUI(null, true);
-                    setAppMode('edit');
-                });
+    // Bottom bar zoom controls
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    
+    if (zoomInBtn) {
+        zoomInBtn.onclick = () => {
+            zoom = Math.min(zoom + 0.1, 3);
+            applyZoom();
+        };
+    }
+    
+    if (zoomOutBtn) {
+        zoomOutBtn.onclick = () => {
+            zoom = Math.max(zoom - 0.1, 0.1);
+            applyZoom();
+        };
+    }
+
+    function updateZoomButtons() {
+        if (zoomInBtn) zoomInBtn.disabled = zoom >= 3;
+        if (zoomOutBtn) zoomOutBtn.disabled = zoom <= 0.1;
+    }
+
+    applyZoom();
+}
+
+// ===== TOUCH AND GESTURE HANDLING =====
+function setupTouchHandling() {
+    const canvasContainer = document.getElementById('canvas-container');
+    if (!canvasContainer) return;
+    
+    // Touch events
+    canvasContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvasContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvasContainer.addEventListener('touchen', handleTouchEnd, { passive: false });
+    
+    // Mouse wheel for zoom
+    canvasContainer.addEventListener('wheel', handleWheelZoom, { passive: false });
+    
+    // Prevent context menu on long press
+    canvasContainer.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+}
+
+function handleTouchStart(e) {
+    e.preventDefault();
+    
+    if (e.touches.length === 1) {
+        // Single touch
+        const touch = e.touches[0];
+        touchStartTime = Date.now();
+        touchStartPos = { x: touch.clientX, y: touch.clientY };
+        
+        if (currentTool === 'hand') {
+            isPanning = true;
+            panStartPoint = { x: touch.clientX, y: touch.clientY };
+            lastPanPoint = { x: touch.clientX, y: touch.clientY };
+        }
+    } else if (e.touches.length === 2) {
+        // Two finger pinch
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        lastTouchDistance = Math.sqrt(
+            Math.pow(touch2.clientX - touch1.clientX, 2) +
+            Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+        gestureStartZoom = zoomLevel;
+        
+        // Hide toolbar during gesture
+        hideToolbarTemporarily();
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    
+    if (e.touches.length === 1 && isPanning && currentTool === 'hand') {
+        // Single finger panning
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - lastPanPoint.x;
+        const deltaY = touch.clientY - lastPanPoint.y;
+        
+        // Pan the canvas viewport
+        const vpt = canvas.viewportTransform;
+        vpt[4] += deltaX;
+        vpt[5] += deltaY;
+        canvas.setViewportTransform(vpt);
+        canvas.renderAll();
+        
+        lastPanPoint = { x: touch.clientX, y: touch.clientY };
+    } else if (e.touches.length === 2) {
+        // Two finger pinch zoom
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.sqrt(
+            Math.pow(touch2.clientX - touch1.clientX, 2) +
+            Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+        
+        if (lastTouchDistance > 0) {
+            const scale = currentDistance / lastTouchDistance;
+            const newZoom = Math.max(10, Math.min(300, gestureStartZoom * scale));
+            
+            // Get center point between fingers
+            const centerX = (touch1.clientX + touch2.clientX) / 2;
+            const centerY = (touch1.clientY + touch2.clientY) / 2;
+            
+            // Apply zoom
+            const canvasElement = document.getElementById('main-canvas');
+            const zoom = newZoom / 100;
+            canvasElement.style.transform = `scale(${zoom})`;
+            
+            // Update zoom display
+            const zoomDisplay = document.getElementById('zoom-level');
+            if (zoomDisplay) {
+                zoomDisplay.innerText = `${newZoom}%`;
+            }
+            
+            zoomLevel = newZoom;
+        }
+    }
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    
+    if (e.touches.length === 0) {
+        // All touches ended
+        isPanning = false;
+        lastTouchDistance = 0;
+        
+        // Show toolbar again
+        showToolbar();
+        
+        // Check for tap gesture
+        const touchDuration = Date.now() - touchStartTime;
+        if (touchDuration < 200 && !isPanning) {
+            handleTouchTap(e);
+        }
+    }
+}
+
+function handleTouchTap(e) {
+    const rect = canvas.getElement().getBoundingClientRect();
+    const x = (e.changedTouches[0].clientX - rect.left) / (zoomLevel / 100);
+    const y = (e.changedTouches[0].clientY - rect.top) / (zoomLevel / 100);
+    
+    // Handle tool-specific touch actions
+    switch (currentTool) {
+        case 'text':
+            addText({ x, y });
+            break;
+        case 'rect':
+            addRectangleAtPosition(x, y);
+            break;
+        case 'circle':
+            addEllipseAtPosition(x, y);
+            break;
+    }
+}
+
+function handleWheelZoom(e) {
+    if (!e.ctrlKey) return;
+    
+    e.preventDefault();
+    
+    const delta = e.deltaY > 0 ? -10 : 10;
+    const newZoom = Math.max(10, Math.min(300, zoomLevel + delta));
+    
+    // Apply zoom
+    const canvasElement = document.getElementById('main-canvas');
+    const zoom = newZoom / 100;
+    canvasElement.style.transform = `scale(${zoom})`;
+    
+    // Update zoom display
+    const zoomDisplay = document.getElementById('zoom-level');
+    if (zoomDisplay) {
+        zoomDisplay.innerText = `${newZoom}%`;
+    }
+    
+    zoomLevel = newZoom;
+}
+
+function hideToolbarTemporarily() {
+    const toolbar = document.querySelector('.canvas-toolbar');
+    if (toolbar) {
+        toolbar.classList.add('gesture-hidden');
+        isToolbarVisible = false;
+    }
+}
+
+function showToolbar() {
+    const toolbar = document.querySelector('.canvas-toolbar');
+    if (toolbar) {
+        toolbar.classList.remove('gesture-hidden', 'temp-hidden');
+        isToolbarVisible = true;
+    }
+}
+
+// ===== TEMPLATE SELECTION =====
+function setupTemplateSelection() {
+    const modal = document.getElementById('canvas-size-modal');
+    const templateBtns = document.querySelectorAll('.template-btn');
+    const customInputs = document.getElementById('custom-size-inputs');
+    const createBtn = document.getElementById('create-canvas-btn');
+    const categoryTabs = document.querySelectorAll('.category-tab');
+    
+    let selectedTemplate = null;
+    
+    // Category tab switching
+    categoryTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const category = this.dataset.category;
+            showCategory(category);
+        });
+    });
+    
+    // Template selection
+    templateBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove previous selection
+            templateBtns.forEach(b => b.classList.remove('selected'));
+            
+            // Select current template
+            this.classList.add('selected');
+            selectedTemplate = this.dataset.size;
+            
+            // Show custom inputs if custom template
+            if (selectedTemplate === 'custom') {
+                customInputs.classList.add('active');
             } else {
-                showCustomAlert('No AI generated image to send to canvas.');
+                customInputs.classList.remove('active');
             }
-        });
-        
-        // Mobile Menu Toggle (for desktop nav)
-        mobileMenuToggleBtn.addEventListener('click', () => {
-            mobileMenuOverlay.classList.toggle('open');
-        });
-        mobileMenuCloseBtn.addEventListener('click', () => {
-            mobileMenuOverlay.classList.remove('open');
-        });
-
-        // Event delegation for mobile menu links (if dynamically added)
-        mobileNavContent.addEventListener('click', (e) => {
-            if (e.target.classList.contains('menu-link') || e.target.closest('.dropdown-menu a')) {
-                mobileMenuOverlay.classList.remove('open'); // Close menu when a link is clicked
-            }
-        });
-
-        aiSamplingStepsInput.addEventListener('input', (e) => {
-            samplingStepsValueEl.textContent = e.target.value;
-        });
-        aiGuidanceScaleInput.addEventListener('input', (e) => {
-            guidanceScaleValueEl.textContent = e.target.value;
-        });
-        aiImageToImageUpload.addEventListener('change', handleAiImageToImageUpload);
-        
-        // --- MOBILE PANEL TOGGLING (REFACTORED AND FIXED) ---
-        mobileBottomBar.querySelectorAll('button[data-panel-target]').forEach(button => {
-            button.addEventListener('click', () => {
-                const targetPanelId = button.dataset.panelTarget;
-                const targetPanel = document.getElementById(targetPanelId);
-                const isAlreadyActive = button.classList.contains('active');
-
-                // 1. Deactivate everything first for a clean state.
-                mobileBottomBar.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                toolsPanel.classList.remove('mobile-active');
-                rightPanelsContainer.classList.remove('mobile-active');
-                allCollapsiblePanels.forEach(panel => panel.classList.remove('mobile-active'));
-
-                // 2. If the clicked button was NOT active, activate the new panel.
-                if (!isAlreadyActive) {
-                    button.classList.add('active');
-                    
-                    if (targetPanelId === 'tools-panel') {
-                        // Handle the unique Tools Panel
-                        toolsPanel.classList.add('mobile-active');
-                    } else {
-                        // Handle all panels inside the right container
-                        targetPanel.classList.add('mobile-active');
-                        rightPanelsContainer.classList.add('mobile-active');
-                    }
-
-                    setAppMode(targetPanelId === 'ai-generation-panel' ? 'generate' : 'edit');
-                } else {
-                    // 3. If it was already active, clicking again just closes it.
-                    // Everything is already hidden from step 1, so just reset the app mode.
-                    setAppMode('edit');
-                }
-            });
-        });
-
-        addLayerBtn.addEventListener('click', addNewLayer);
-    }
-    
-    function handleResize() {
-        resizeCanvasToFitContainer();
-        populateMobileMenu();
-
-        if (window.innerWidth <= 768) {
-            mobileBottomBar.style.display = 'flex';
-            desktopNav.style.display = 'none';
-            mobileMenuOverlay.classList.remove('open');
             
-            // On mobile, if no panel is active, deactivate all containers.
-            if (!mobileBottomBar.querySelector('button.active')) {
-                toolsPanel.classList.remove('mobile-active');
-                rightPanelsContainer.classList.remove('mobile-active');
-            }
-
-        } else {
-            mobileBottomBar.style.display = 'none';
-            desktopNav.style.display = 'flex';
-            
-            // Reset mobile-specific classes
-            toolsPanel.classList.remove('mobile-active');
-            rightPanelsContainer.classList.remove('mobile-active');
-            allCollapsiblePanels.forEach(panel => {
-                panel.classList.remove('mobile-active'); 
-                panel.classList.remove('collapsed');
-            });
-            mobileMenuOverlay.classList.remove('open');
-            setAppMode('edit');
-        }
-        updateUI(null, false);
-    }
+            // Enable create button
+            createBtn.disabled = false;
+        });
+    });
     
-    function addNewLayer() {
-        const rect = new fabric.Rect({
-            left: 50, top: 50, fill: '#ffffff', width: 100, height: 100,
-            name: 'New Empty Layer', rx: 0, ry: 0,
-            opacity: 1
-        });
-        canvas.add(rect);
-        canvas.centerObject(rect);
-        canvas.setActiveObject(rect);
-        updateUI(null, true);
-    }
-
-    // --- THEME TOGGLE ---
-    function setupThemeToggle() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'light') {
-            document.body.classList.add('light-mode');
-            themeToggleBtn.querySelector('i').className = 'fas fa-sun';
+    // Create canvas button
+    createBtn.addEventListener('click', function() {
+        let width, height, name;
+        
+        if (selectedTemplate === 'custom') {
+            width = parseInt(document.getElementById('custom-width').value);
+            height = parseInt(document.getElementById('custom-height').value);
+            name = 'Custom Canvas';
         } else {
-            document.body.classList.remove('light-mode');
-            themeToggleBtn.querySelector('i').className = 'fas fa-moon';
+            const dimensions = selectedTemplate.split('x');
+            width = parseInt(dimensions[0]);
+            height = parseInt(dimensions[1]);
+            name = this.closest('.template-btn')?.dataset.name || 'New Canvas';
         }
-    }
-
-    function toggleTheme() {
-        document.body.classList.toggle('light-mode');
-        const isLight = document.body.classList.contains('light-mode');
-        localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        themeToggleBtn.querySelector('i').className = isLight ? 'fas fa-sun' : 'fas fa-moon';
-    }
-
-    // --- COLLAPSIBLE PANELS (Desktop behavior) ---
-    function setupCollapsiblePanels() {
-        collapsibleHeaders.forEach(header => {
-            header.addEventListener('click', () => {
-                if (window.innerWidth > 768) {
-                    const panel = header.closest('.collapsible-panel');
-                    panel.classList.toggle('collapsed');
-                }
-            });
-        });
-    }
-
-    // --- MOBILE MENU SYSTEM ---
-    function populateMobileMenu() {
-        mobileNavContent.innerHTML = '';
-        desktopNav.querySelectorAll('.menu-item').forEach(menuItem => {
-            const clonedItem = menuItem.cloneNode(true);
-            const dropdown = clonedItem.querySelector('.dropdown-menu');
-            if (dropdown) {
-                // Ensure dropdowns are visible within the mobile menu
-                dropdown.style.opacity = 1;
-                dropdown.style.visibility = 'visible';
-                dropdown.style.transform = 'translateY(0)';
-                dropdown.classList.add('mobile-dropdown-menu');
-            }
-            // Remove desktop menu specific event listeners to prevent conflicts
-            const menuLink = clonedItem.querySelector('.menu-link');
-            if (menuLink) {
-                menuLink.replaceWith(menuLink.cloneNode(true)); // Replaces the node to remove event listeners
-            }
-            clonedItem.removeEventListener('mouseenter', () => {});
-            clonedItem.removeEventListener('mouseleave', () => {});
-            mobileNavContent.appendChild(clonedItem);
-        });
-    }
-
-    // --- UI UPDATE ORCHESTRATOR ---
-    function updateUI(e, saveToHistory = true) {
-        updateLayersPanel();
-        updatePropertiesPanel(e ? (e.target || e) : null);
-        if (saveToHistory) {
-            saveCanvasState();
-        }
-    }
-
-    // --- CANVAS SIZING AND RESIZING ---
-    function resizeCanvasToFitContainer() {
-        const containerWidth = canvasContainer.offsetWidth;
-        const containerHeight = canvasContainer.offsetHeight;
-        canvas.setDimensions({ width: containerWidth, height: containerHeight });
+        
+        // Update canvas size
+        canvas.setDimensions({ width, height });
         canvas.renderAll();
-    }
+        
+        // Update UI
+        updateCanvasInfo();
+        document.getElementById('canvas-name').textContent = name;
+        
+        // Close modal with animation
+        modal.classList.add('closing');
+        setTimeout(() => {
+            modal.classList.remove('active', 'closing');
+        }, 300);
+        
+        // Save initial state
+        saveCanvasState();
+        
+        // Fit canvas to screen
+        setTimeout(() => {
+            fitToScreen();
+        }, 100);
+    });
+}
 
-    function changeCanvasSize() {
-        const [width, height] = canvasSizeSelect.value.split('x').map(Number);
-        canvas.clear();
-        canvas.setDimensions({ width: width, height: height });
-        canvas.backgroundColor = '#ffffff';
-        canvas.renderAll();
-        updateUI(null);
+function showCategory(categoryName) {
+    // Update tab states
+    const tabs = document.querySelectorAll('.category-tab');
+    tabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.category === categoryName);
+    });
+    
+    // Show/hide categories
+    const categories = document.querySelectorAll('.template-category');
+    categories.forEach(category => {
+        category.classList.toggle('active', category.dataset.category === categoryName);
+    });
+    
+    // Show/hide custom inputs
+    const customInputs = document.querySelector('.custom-size-inputs');
+    if (customInputs) {
+        customInputs.classList.toggle('active', categoryName === 'custom');
     }
+}
 
-    function getCanvasSize() {
-        const [width, height] = canvasSizeSelect.value.split('x').map(Number);
-        return { width, height };
-    }
+// ===== EVENT LISTENERS =====
+function setupEventListeners() {
+    // Menu items
+    setupMenuItems();
+    
+    // Header actions
+    document.getElementById('ai-toggle-btn').addEventListener('click', toggleAIPanel);
+    document.getElementById('undo-btn').addEventListener('click', undo);
+    document.getElementById('redo-btn').addEventListener('click', redo);
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    
+    // AI Panel
+    document.getElementById('ai-close-btn').addEventListener('click', closeAIPanel);
+    document.getElementById('generate-ai-image-btn').addEventListener('click', generateAIImage);
+    document.getElementById('regenerate-btn').addEventListener('click', regenerateAIImage);
+    document.getElementById('add-to-canvas-btn').addEventListener('click', addAIImageToCanvas);
+    
+    // Canvas controls
+    document.getElementById('grid-toggle').addEventListener('click', toggleGrid);
+    document.getElementById('rulers-toggle').addEventListener('click', toggleRulers);
+    document.getElementById('fit-to-screen').addEventListener('click', fitToScreen);
+    
+    // Export
+    document.getElementById('export-btn').addEventListener('click', showExportOptions);
+    
+    // Layer controls
+    document.getElementById('add-new-layer-btn').addEventListener('click', () => addNewLayer());
+    document.getElementById('move-layer-up-btn').addEventListener('click', moveLayerUp);
+    document.getElementById('move-layer-down-btn').addEventListener('click', moveLayerDown);
+    document.getElementById('duplicate-layer-btn').addEventListener('click', duplicateLayer);
+    document.getElementById('delete-layer-btn').addEventListener('click', deleteLayer);
+    
+    // Color picker
+    document.getElementById('color-picker').addEventListener('change', handleColorChange);
+    
+    // Image upload
+    document.getElementById('image-upload-btn').addEventListener('click', () => {
+        document.getElementById('image-upload').click();
+    });
+    document.getElementById('image-upload').addEventListener('change', handleImageUpload);
+    
+    // Crop actions
+    document.getElementById('apply-crop-btn').addEventListener('click', applyCrop);
+    document.getElementById('cancel-crop-btn').addEventListener('click', cancelCrop);
+    
+    // Modal close buttons
+    document.querySelectorAll('.modal .close-btn, .modal .ai-close-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.modal').classList.remove('active');
+        });
+    });
+    
+    // Modal backdrop clicks
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+        backdrop.addEventListener('click', function() {
+            this.closest('.modal').classList.remove('active');
+        });
+    });
+    
+    // Collapsible panels
+    setupCollapsiblePanels();
+    
+    // Blur intensity slider
+    document.getElementById('ai-blur').addEventListener('input', function() {
+        document.getElementById('blur-value').textContent = this.value;
+    });
+}
 
-    // --- TOOL MANAGEMENT ---
-    function handleToolClick(tool, shape) {
-        setActiveTool(tool);
-        if (tool === 'shape' && shape) {
-            activeTool = 'shape-draw';
-            currentShape = shape;
+function setupMenuItems() {
+    // File menu
+    document.getElementById('new-project').addEventListener('click', newProject);
+    document.getElementById('open-image').addEventListener('click', openImage);
+    document.getElementById('save-project').addEventListener('click', saveProject);
+    document.getElementById('export-png').addEventListener('click', () => exportCanvas('png'));
+    document.getElementById('export-jpg').addEventListener('click', () => exportCanvas('jpg'));
+    document.getElementById('export-svg').addEventListener('click', () => exportCanvas('svg'));
+    
+    // Edit menu
+    document.getElementById('undo-action').addEventListener('click', undo);
+    document.getElementById('redo-action').addEventListener('click', redo);
+    document.getElementById('cut-object').addEventListener('click', cutObject);
+    document.getElementById('copy-object').addEventListener('click', copyObject);
+    document.getElementById('paste-object').addEventListener('click', pasteObject);
+    document.getElementById('duplicate-object').addEventListener('click', duplicateObject);
+    document.getElementById('delete-object').addEventListener('click', deleteObject);
+    
+    // Image menu
+    document.getElementById('crop-image').addEventListener('click', startCrop);
+    document.getElementById('resize-canvas').addEventListener('click', resizeCanvas);
+    document.getElementById('rotate-image').addEventListener('click', rotateImage);
+    document.getElementById('flip-horizontal').addEventListener('click', flipHorizontal);
+    document.getElementById('flip-vertical').addEventListener('click', flipVertical);
+    
+    // Layer menu
+    document.getElementById('add-layer').addEventListener('click', () => addNewLayer());
+    document.getElementById('delete-layer').addEventListener('click', deleteLayer);
+    document.getElementById('duplicate-layer').addEventListener('click', duplicateLayer);
+    document.getElementById('move-layer-up').addEventListener('click', moveLayerUp);
+    document.getElementById('move-layer-down').addEventListener('click', moveLayerDown);
+    
+    // Select menu
+    document.getElementById('select-all').addEventListener('click', selectAll);
+    document.getElementById('deselect').addEventListener('click', deselectAll);
+    
+    // Effects menu
+    document.getElementById('blur-effect').addEventListener('click', () => applyEffect('blur'));
+    document.getElementById('sharpen-effect').addEventListener('click', () => applyEffect('sharpen'));
+    document.getElementById('brightness-effect').addEventListener('click', () => applyEffect('brightness'));
+    document.getElementById('contrast-effect').addEventListener('click', () => applyEffect('contrast'));
+    document.getElementById('grayscale-effect').addEventListener('click', () => applyEffect('grayscale'));
+    document.getElementById('sepia-effect').addEventListener('click', () => applyEffect('sepia'));
+    document.getElementById('invert-effect').addEventListener('click', () => applyEffect('invert'));
+    
+    // View menu
+    document.getElementById('zoom-in').addEventListener('click', zoomIn);
+    document.getElementById('zoom-out').addEventListener('click', zoomOut);
+    document.getElementById('zoom-fit').addEventListener('click', fitToScreen);
+    document.getElementById('zoom-100').addEventListener('click', () => setZoom(100));
+    document.getElementById('toggle-grid').addEventListener('click', toggleGrid);
+    document.getElementById('toggle-rulers').addEventListener('click', toggleRulers);
+    
+    // Help menu
+    document.getElementById('keyboard-shortcuts').addEventListener('click', showKeyboardShortcuts);
+    document.getElementById('documentation').addEventListener('click', showDocumentation);
+    document.getElementById('share-prompt').addEventListener('click', showSharePrompt);
+    document.getElementById('about').addEventListener('click', showAbout);
+}
+
+// ===== TOOLS SETUP =====
+function setupTools() {
+    const toolBtns = document.querySelectorAll('.tool-btn');
+    
+    toolBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all tools
+            toolBtns.forEach(b => b.classList.remove('active'));
+            
+            // Add active class to clicked tool
+            this.classList.add('active');
+            
+            // Set current tool
+            const tool = this.dataset.tool;
+            const shape = this.dataset.shape;
+            
+            if (tool === 'shape' && shape) {
+                currentTool = shape;
+            } else {
+                currentTool = tool;
+            }
+            
+            // Update canvas interaction mode
+            updateCanvasMode();
+            
+            console.log('Tool changed to:', currentTool);
+        });
+    });
+}
+
+function updateCanvasMode() {
+    // Reset canvas modes
+    canvas.isDrawingMode = false;
+    canvas.selection = true;
+    canvas.defaultCursor = 'default';
+    
+    switch (currentTool) {
+        case 'select':
+            canvas.selection = true;
+            break;
+        case 'brush':
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush.width = brushSize;
+            canvas.freeDrawingBrush.color = currentColor;
+            break;
+        case 'eraser':
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
+            canvas.freeDrawingBrush.width = brushSize;
+            break;
+        case 'hand':
+            canvas.selection = false;
+            canvas.defaultCursor = 'grab';
+            break;
+        case 'zoom':
+            canvas.selection = false;
+            canvas.defaultCursor = 'zoom-in';
+            break;
+        case 'text':
+            canvas.selection = false;
+            canvas.defaultCursor = 'text';
+            break;
+        case 'rect':
+        case 'circle':
+        case 'line':
             canvas.selection = false;
             canvas.defaultCursor = 'crosshair';
-        }
-    }
-
-    function setActiveTool(tool) {
-        activeTool = tool;
-        canvas.isDrawingMode = false;
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-        cropActionsContainer.style.display = 'none';
-
-        if(cropRect) {
-            canvas.remove(cropRect);
-            cropRect = null;
-        }
-        if (currentSelectionRect) {
-            canvas.remove(currentSelectionRect);
-            currentSelectionRect = null;
-        }
-        
-        toolButtons.forEach(btn => btn.classList.remove('active'));
-        const activeBtn = document.querySelector(`.tool-btn[data-tool="${tool}"]`);
-        if (activeBtn) activeBtn.classList.add('active');
-
-        canvas.freeDrawingBrush.globalCompositeOperation = 'source-over'; 
-        canvas.freeDrawingBrush.color = '#000000';
-        canvas.freeDrawingBrush.width = 5;
-
-        switch (tool) {
-            case 'select':
-                canvas.selection = true;
-                canvas.defaultCursor = 'default';
-                break;
-            case 'hand':
-                canvas.selection = false;
-                canvas.defaultCursor = 'grab';
-                break;
-            case 'zoom':
-                canvas.selection = false;
-                canvas.defaultCursor = 'zoom-in';
-                break;
-            case 'brush':
-                canvas.isDrawingMode = true;
-                canvas.freeDrawingBrush.color = '#000000';
-                canvas.freeDrawingBrush.width = 5;
-                break;
-            case 'eraser':
-                canvas.isDrawingMode = true;
-                canvas.freeDrawingBrush.color = '#ffffff';
-                canvas.freeDrawingBrush.globalCompositeOperation = 'destination-out';
-                canvas.freeDrawingBrush.width = 20;
-                break;
-            case 'color-picker':
-                canvas.selection = false;
-                canvas.defaultCursor = 'copy';
-                colorPickerActive = true;
-                showCustomAlert('Click on any pixel on the canvas to pick its color.');
-                break;
-            case 'text':
-                canvas.selection = false;
-                canvas.defaultCursor = 'text';
-                addText();
-                break;
-            case 'shape':
-                canvas.selection = false;
-                canvas.defaultCursor = 'crosshair';
-                break;
-            case 'crop':
-                canvas.selection = false;
-                canvas.defaultCursor = 'crosshair';
-                break;
-            default:
-                canvas.selection = true;
-                canvas.defaultCursor = 'default';
-                break;
-        }
-        updatePropertiesPanel(null);
-        canvas.renderAll();
-    }
-    
-    // --- OBJECT CREATION ---
-    function addText() {
-        const text = new fabric.IText('Double click to edit', {
-            left: canvas.getWidth() / 2, top: canvas.getHeight() / 2,
-            fontSize: 48, fill: '#333333', fontFamily: 'Inter', name: 'Text Layer'
-        });
-        canvas.add(text);
-        text.center();
-        canvas.setActiveObject(text);
-        saveCanvasState();
-    }
-
-    function createShape(shapeType, x, y, width, height) {
-        let shape;
-        const commonProps = {
-            left: x, top: y,
-            fill: '#2cb67d', stroke: '#000000', strokeWidth: 0,
-            name: `${shapeType.charAt(0).toUpperCase() + shapeType.slice(1)} Layer`
-        };
-
-        if (shapeType === 'rect') {
-            shape = new fabric.Rect({...commonProps, width: width, height: height, rx: 0, ry: 0 });
-        } else if (shapeType === 'circle') {
-            const radius = Math.min(width, height) / 2;
-            shape = new fabric.Circle({ ...commonProps, radius: radius, left: x + radius, top: y + radius });
-        } else if (shapeType === 'line') {
-            shape = new fabric.Line([x, y, x + width, y + height], {
-                stroke: '#000000',
-                strokeWidth: 5,
-                name: 'Line Layer'
-            });
-        }
-        return shape;
-    }
-    
-    function handleImageUpload(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (f) => {
-            fabric.Image.fromURL(f.target.result, (img) => {
-                img.set({ name: file.name || 'Image Layer' });
-                img.scaleToWidth(canvas.getWidth() * 0.5);
-                canvas.add(img);
-                img.center();
-                canvas.setActiveObject(img);
-                canvas.renderAll();
-                updateUI(null, true);
-            });
-        };
-        reader.readAsDataURL(file);
-        e.target.value = '';
-    }
-    
-    // --- PAN & ZOOM ---
-    function handleMouseDown(opt) {
-        const evt = opt.e;
-        if (activeTool === 'hand' || evt.button === 1) { // Hand tool or middle mouse button
-            isPanningCanvas = true;
-            canvas.selection = false;
-            canvas.defaultCursor = 'grabbing';
-            lastPanPosX = evt.clientX;
-            lastPanPosY = evt.clientY;
-        } else if (activeTool === 'crop' && !canvas.getActiveObject() && !cropRect) {
-            const pointer = canvas.getPointer(evt);
-            cropRect = new fabric.Rect({
-                left: pointer.x, top: pointer.y, width: 0, height: 0,
-                fill: 'rgba(0,0,0,0.3)', stroke: 'rgba(255,255,255,0.5)', strokeDashArray: [4, 4],
-                selectable: false, evented: false,
-            });
-            canvas.add(cropRect);
-        } else if (activeTool === 'zoom') {
-            const pointer = canvas.getPointer(evt);
-            if (evt.shiftKey) {
-                zoomCanvas(pointer, 0.9);
-            } else {
-                zoomCanvas(pointer, 1.1);
-            }
-        } else if (activeTool === 'color-picker') {
-            const pointer = canvas.getPointer(evt);
-            const ctx = canvas.getContext();
-            const pixel = ctx.getImageData(pointer.x, pointer.y, 1, 1).data;
-            const color = `rgba(${pixel[0]},${pixel[1]},${pixel[2]},${pixel[3] / 255})`;
-            showCustomAlert(`Picked color: ${color}`);
-            setActiveTool('select');
-        } else if (activeTool === 'shape-draw' && !isDrawingShape) {
-            isDrawingShape = true;
-            const pointer = canvas.getPointer(evt);
-            startX = pointer.x;
-            startY = pointer.y;
-            currentShape = createShape(currentShape, startX, startY, 0, 0);
-            canvas.add(currentShape);
-        }
-    }
-
-    function handleMouseMove(opt) {
-        const evt = opt.e;
-        if (isPanningCanvas) {
-            const vpt = canvas.viewportTransform;
-            vpt[4] += evt.clientX - lastPanPosX;
-            vpt[5] += evt.clientY - lastPanPosY;
-            canvas.requestRenderAll();
-            lastPanPosX = evt.clientX; lastPanPosY = evt.clientY;
-        } else if (activeTool === 'crop' && cropRect) {
-            const pointer = canvas.getPointer(evt);
-            let width = pointer.x - cropRect.left;
-            let height = pointer.y - cropRect.top;
-
-            if (width < 0) { cropRect.set({ left: pointer.x }); width = Math.abs(width); }
-            if (height < 0) { cropRect.set({ top: pointer.y }); height = Math.abs(height); }
-            cropRect.set({ width: width, height: height });
-            canvas.renderAll();
-        } else if (activeTool === 'shape-draw' && isDrawingShape && currentShape) {
-            const pointer = canvas.getPointer(evt);
-            const width = pointer.x - startX;
-            const height = pointer.y - startY;
-
-            if (currentShape.type === 'rect' || currentShape.type === 'circle') {
-                currentShape.set({
-                    left: Math.min(startX, pointer.x),
-                    top: Math.min(startY, pointer.y),
-                    width: Math.abs(width),
-                    height: Math.abs(height)
-                });
-                if (currentShape.type === 'circle') {
-                    currentShape.set({ radius: Math.min(Math.abs(width), Math.abs(height)) / 2 });
-                    currentShape.set({ left: Math.min(startX, pointer.x) + currentShape.radius, top: Math.min(startY, pointer.y) + currentShape.radius });
-                }
-            } else if (currentShape.type === 'line') {
-                currentShape.set({ x2: pointer.x, y2: pointer.y });
-            }
-            canvas.renderAll();
-        }
-    }
-
-    function handleMouseUp(opt) {
-        if (isPanningCanvas) {
-            isPanningCanvas = false;
-            canvas.defaultCursor = 'grab';
-        } else if (activeTool === 'crop' && cropRect && cropRect.width > 0 && cropRect.height > 0) {
-            const hasOtherObjects = canvas.getObjects().some(obj => obj !== cropRect);
-            if (hasOtherObjects) {
-                cropActionsContainer.style.display = 'flex';
-            } else {
-                cancelCrop();
-            }
-        } else if (activeTool === 'shape-draw' && isDrawingShape) {
-            isDrawingShape = false;
-            if (currentShape) {
-                canvas.setActiveObject(currentShape);
-                updateUI(null, true);
-                currentShape = null;
-            }
-            setActiveTool('select');
-        }
-        if (!canvas.isDrawingMode && activeTool !== 'hand' && activeTool !== 'zoom' && activeTool !== 'color-picker') {
+            break;
+        default:
             canvas.selection = true;
-        }
+            break;
     }
+}
 
-    function handleMouseWheel(opt) {
-        const delta = opt.e.deltaY;
-        const pointer = canvas.getPointer(opt.e);
-        let zoom = canvas.getZoom();
-        zoom *= 0.999 ** delta;
-        if (zoom > 20) zoom = 20;
-        if (zoom < 0.1) zoom = 0.1;
-        canvas.zoomToPoint(pointer, zoom);
-        updateZoomUI(zoom);
-        opt.e.preventDefault();
-        opt.e.stopPropagation();
+// ===== MOUSE EVENTS =====
+function handleMouseDown(event) {
+    const pointer = canvas.getPointer(event.e);
+    isDrawing = true;
+    
+    switch (currentTool) {
+        case 'rect':
+            startDrawingRect(pointer);
+            break;
+        case 'circle':
+            startDrawingCircle(pointer);
+            break;
+        case 'line':
+            startDrawingLine(pointer);
+            break;
+        case 'text':
+            addText(pointer);
+            break;
+        case 'zoom':
+            handleZoomClick(event.e);
+            break;
+        case 'hand':
+            canvas.defaultCursor = 'grabbing';
+            break;
     }
+}
 
-    function zoomCanvas(point, factor) {
-        let zoom = canvas.getZoom() * factor;
-        if (zoom > 20) zoom = 20;
-        if (zoom < 0.1) zoom = 0.1;
-        canvas.zoomToPoint(point, zoom);
-        updateZoomUI(zoom);
+function handleMouseMove(event) {
+    if (!isDrawing) return;
+    
+    const pointer = canvas.getPointer(event.e);
+    
+    switch (currentTool) {
+        case 'rect':
+            updateDrawingRect(pointer);
+            break;
+        case 'circle':
+            updateDrawingCircle(pointer);
+            break;
+        case 'line':
+            updateDrawingLine(pointer);
+            break;
+    }
+}
+
+function handleMouseUp(event) {
+    isDrawing = false;
+    
+    switch (currentTool) {
+        case 'rect':
+        case 'circle':
+        case 'line':
+            finishDrawingShape();
+            break;
+        case 'hand':
+            canvas.defaultCursor = 'grab';
+            break;
+    }
+}
+
+// ===== SHAPE DRAWING =====
+let startPoint = null;
+let currentShape = null;
+
+function startDrawingRect(pointer) {
+    startPoint = pointer;
+    currentShape = new fabric.Rect({
+        left: pointer.x,
+        top: pointer.y,
+        width: 0,
+        height: 0,
+        fill: 'transparent',
+        stroke: currentColor,
+        strokeWidth: 2
+    });
+    canvas.add(currentShape);
+}
+
+function updateDrawingRect(pointer) {
+    if (!currentShape || !startPoint) return;
+    
+    const width = Math.abs(pointer.x - startPoint.x);
+    const height = Math.abs(pointer.y - startPoint.y);
+    const left = Math.min(pointer.x, startPoint.x);
+    const top = Math.min(pointer.y, startPoint.y);
+    
+    currentShape.set({
+        left: left,
+        top: top,
+        width: width,
+        height: height
+    });
+    
+    canvas.renderAll();
+}
+
+function startDrawingCircle(pointer) {
+    startPoint = pointer;
+    currentShape = new fabric.Circle({
+        left: pointer.x,
+        top: pointer.y,
+        radius: 0,
+        fill: 'transparent',
+        stroke: currentColor,
+        strokeWidth: 2
+    });
+    canvas.add(currentShape);
+}
+
+function updateDrawingCircle(pointer) {
+    if (!currentShape || !startPoint) return;
+    
+    const radius = Math.sqrt(
+        Math.pow(pointer.x - startPoint.x, 2) + 
+        Math.pow(pointer.y - startPoint.y, 2)
+    ) / 2;
+    
+    currentShape.set({
+        radius: radius,
+        left: startPoint.x - radius,
+        top: startPoint.y - radius
+    });
+    
+    canvas.renderAll();
+}
+
+function startDrawingLine(pointer) {
+    startPoint = pointer;
+    currentShape = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+        stroke: currentColor,
+        strokeWidth: 2
+    });
+    canvas.add(currentShape);
+}
+
+function updateDrawingLine(pointer) {
+    if (!currentShape || !startPoint) return;
+    
+    currentShape.set({
+        x2: pointer.x,
+        y2: pointer.y
+    });
+    
+    canvas.renderAll();
+}
+
+function finishDrawingShape() {
+    if (currentShape) {
+        canvas.setActiveObject(currentShape);
+        saveCanvasState();
+        currentShape = null;
+        startPoint = null;
+    }
+}
+
+// ===== TEXT HANDLING =====
+function addText(pointer) {
+    const text = new fabric.IText('Click to edit text', {
+        left: pointer.x,
+        top: pointer.y,
+        fontFamily: 'Inter',
+        fontSize: 24,
+        fill: currentColor
+    });
+    
+    canvas.add(text);
+    canvas.setActiveObject(text);
+    text.enterEditing();
+    saveCanvasState();
+}
+
+function addRectangleAtPosition(x, y) {
+    const rect = new fabric.Rect({
+        left: x - 50,
+        top: y - 25,
+        width: 100,
+        height: 50,
+        fill: 'transparent',
+        stroke: currentColor,
+        strokeWidth: 2
+    });
+    
+    canvas.add(rect);
+    canvas.setActiveObject(rect);
+    saveCanvasState();
+}
+
+function addEllipseAtPosition(x, y) {
+    const ellipse = new fabric.Ellipse({
+        left: x,
+        top: y,
+        rx: 50,
+        ry: 25,
+        fill: 'transparent',
+        stroke: currentColor,
+        strokeWidth: 2
+    });
+    
+    canvas.add(ellipse);
+    canvas.setActiveObject(ellipse);
+    saveCanvasState();
+}
+
+// ===== OBJECT SELECTION HANDLING =====
+function handleObjectSelection(event) {
+    selectedObject = event.selected ? event.selected[0] : event.target;
+    updatePropertiesPanel();
+}
+
+function handleObjectDeselection() {
+    selectedObject = null;
+    updatePropertiesPanel();
+}
+
+// ===== PROPERTIES PANEL =====
+function updatePropertiesPanel() {
+    const panel = document.getElementById('properties-panel-content');
+    const placeholder = document.getElementById('properties-panel-placeholder');
+    
+    if (!selectedObject) {
+        panel.style.display = 'none';
+        placeholder.style.display = 'flex';
+        return;
     }
     
-    function handleZoomSlider(e) {
-        const zoom = parseFloat(e.target.value) / 100;
-        canvas.zoomToPoint(new fabric.Point(canvas.width / 2, canvas.height / 2), zoom);
-        updateZoomUI(zoom);
+    panel.style.display = 'block';
+    placeholder.style.display = 'none';
+    
+    // Clear existing properties
+    panel.innerHTML = '';
+    
+    // Add common properties
+    addPropertyGroup(panel, 'Position & Size', [
+        { label: 'X', type: 'number', value: Math.round(selectedObject.left), property: 'left' },
+        { label: 'Y', type: 'number', value: Math.round(selectedObject.top), property: 'top' },
+        { label: 'Width', type: 'number', value: Math.round(selectedObject.width * selectedObject.scaleX), property: 'width' },
+        { label: 'Height', type: 'number', value: Math.round(selectedObject.height * selectedObject.scaleY), property: 'height' }
+    ]);
+    
+    addPropertyGroup(panel, 'Transform', [
+        { label: 'Rotation', type: 'number', value: Math.round(selectedObject.angle), property: 'angle', min: -180, max: 180 },
+        { label: 'Opacity', type: 'range', value: selectedObject.opacity, property: 'opacity', min: 0, max: 1, step: 0.1 }
+    ]);
+    
+    // Add object-specific properties
+    if (selectedObject.type === 'i-text' || selectedObject.type === 'text') {
+        addTextProperties(panel);
+    } else if (selectedObject.type === 'rect' || selectedObject.type === 'circle') {
+        addShapeProperties(panel);
+    } else if (selectedObject.type === 'image') {
+        addImageProperties(panel);
+    }
+}
+
+function addPropertyGroup(panel, title, properties) {
+    const group = document.createElement('div');
+    group.className = 'prop-group';
+    
+    const titleEl = document.createElement('h4');
+    titleEl.textContent = title;
+    titleEl.style.marginBottom = '12px';
+    titleEl.style.color = 'var(--text-secondary)';
+    titleEl.style.fontSize = '14px';
+    titleEl.style.fontWeight = '600';
+    group.appendChild(titleEl);
+    
+    properties.forEach(prop => {
+        const propDiv = document.createElement('div');
+        propDiv.className = 'prop-group';
+        
+        const label = document.createElement('label');
+        label.textContent = prop.label;
+        propDiv.appendChild(label);
+        
+        const input = document.createElement('input');
+        input.type = prop.type;
+        input.value = prop.value;
+        if (prop.min !== undefined) input.min = prop.min;
+        if (prop.max !== undefined) input.max = prop.max;
+        if (prop.step !== undefined) input.step = prop.step;
+        
+        input.addEventListener('input', function() {
+            updateObjectProperty(prop.property, this.value, prop.type);
+        });
+        
+        propDiv.appendChild(input);
+        group.appendChild(propDiv);
+    });
+    
+    panel.appendChild(group);
+}
+
+function addTextProperties(panel) {
+    addPropertyGroup(panel, 'Text', [
+        { label: 'Font Size', type: 'number', value: selectedObject.fontSize, property: 'fontSize', min: 8, max: 200 },
+        { label: 'Font Weight', type: 'select', value: selectedObject.fontWeight, property: 'fontWeight', options: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'] }
+    ]);
+    
+    // Add color picker for text
+    const colorGroup = document.createElement('div');
+    colorGroup.className = 'prop-group';
+    
+    const colorLabel = document.createElement('label');
+    colorLabel.textContent = 'Text Color';
+    colorGroup.appendChild(colorLabel);
+    
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = selectedObject.fill;
+    colorInput.addEventListener('change', function() {
+        updateObjectProperty('fill', this.value);
+    });
+    colorGroup.appendChild(colorInput);
+    
+    panel.appendChild(colorGroup);
+}
+
+function addShapeProperties(panel) {
+    const fillGroup = document.createElement('div');
+    fillGroup.className = 'prop-group';
+    
+    const fillLabel = document.createElement('label');
+    fillLabel.textContent = 'Fill Color';
+    fillGroup.appendChild(fillLabel);
+    
+    const fillInput = document.createElement('input');
+    fillInput.type = 'color';
+    fillInput.value = selectedObject.fill || '#ffffff';
+    fillInput.addEventListener('change', function() {
+        updateObjectProperty('fill', this.value);
+    });
+    fillGroup.appendChild(fillInput);
+    
+    const strokeGroup = document.createElement('div');
+    strokeGroup.className = 'prop-group';
+    
+    const strokeLabel = document.createElement('label');
+    strokeLabel.textContent = 'Stroke Color';
+    strokeGroup.appendChild(strokeLabel);
+    
+    const strokeInput = document.createElement('input');
+    strokeInput.type = 'color';
+    strokeInput.value = selectedObject.stroke || '#000000';
+    strokeInput.addEventListener('change', function() {
+        updateObjectProperty('stroke', this.value);
+    });
+    strokeGroup.appendChild(strokeInput);
+    
+    panel.appendChild(fillGroup);
+    panel.appendChild(strokeGroup);
+    
+    addPropertyGroup(panel, 'Stroke', [
+        { label: 'Stroke Width', type: 'number', value: selectedObject.strokeWidth || 0, property: 'strokeWidth', min: 0, max: 50 }
+    ]);
+}
+
+function addImageProperties(panel) {
+    addPropertyGroup(panel, 'Image', [
+        { label: 'Brightness', type: 'range', value: 0, property: 'brightness', min: -1, max: 1, step: 0.1 },
+        { label: 'Contrast', type: 'range', value: 0, property: 'contrast', min: -1, max: 1, step: 0.1 },
+        { label: 'Saturation', type: 'range', value: 0, property: 'saturation', min: -1, max: 1, step: 0.1 }
+    ]);
+}
+
+function updateObjectProperty(property, value, type = 'text') {
+    if (!selectedObject) return;
+    
+    let processedValue = value;
+    
+    if (type === 'number') {
+        processedValue = parseFloat(value);
+    } else if (type === 'range') {
+        processedValue = parseFloat(value);
     }
     
-    function updateZoomUI(zoom) {
-        zoomLevelEl.textContent = `${Math.round(zoom * 100)}%`;
-        zoomSlider.value = zoom * 100;
-    }
-
-    // --- CROP LOGIC ---
-    function applyCrop() {
-        if (!cropRect) return;
-
-        const objectsToCrop = canvas.getObjects().filter(obj => obj !== cropRect);
-        if (objectsToCrop.length === 0) {
-            cancelCrop();
-            return;
+    // Handle special cases
+    if (property === 'width' || property === 'height') {
+        const currentScale = property === 'width' ? selectedObject.scaleX : selectedObject.scaleY;
+        const originalDimension = property === 'width' ? selectedObject.width : selectedObject.height;
+        const newScale = processedValue / originalDimension;
+        
+        if (property === 'width') {
+            selectedObject.set('scaleX', newScale);
+        } else {
+            selectedObject.set('scaleY', newScale);
         }
-
-        const originalActiveObject = canvas.getActiveObject();
-        canvas.discardActiveObject();
-
-        const tempGroup = new fabric.Group(objectsToCrop, {
-            selectable: false, evented: false
-        });
-        canvas.add(tempGroup);
-        canvas.renderAll();
-
-        const croppedData = canvas.toDataURL({
-            left: cropRect.left,
-            top: cropRect.top,
-            width: cropRect.width,
-            height: cropRect.height,
-            format: 'png',
-            quality: 1.0
-        });
-
-        canvas.clear();
-        
-        fabric.Image.fromURL(croppedData, (img) => {
-            canvas.setDimensions({ width: img.width, height: img.height });
-            canvas.add(img);
-            img.center();
-            canvas.setActiveObject(img);
-            canvas.renderAll();
-            updateUI(null, true);
-        });
-
-        cancelCrop();
+    } else {
+        selectedObject.set(property, processedValue);
     }
+    
+    canvas.renderAll();
+    saveCanvasState();
+}
 
-    function cancelCrop() {
-        if (cropRect) canvas.remove(cropRect);
-        cropRect = null;
-        cropActionsContainer.style.display = 'none';
-        setActiveTool('select');
-        canvas.discardActiveObject().renderAll();
-    }
+// ===== LAYERS MANAGEMENT =====
+function addNewLayer(name = null) {
+    const layerName = name || `Layer ${layers.length + 1}`;
+    const layer = {
+        id: Date.now(),
+        name: layerName,
+        visible: true,
+        locked: false,
+        objects: []
+    };
+    
+    layers.push(layer);
+    currentLayer = layer;
+    
+    updateLayersPanel();
+    saveCanvasState();
+}
 
-    // --- LAYER & PROPERTIES PANEL LOGIC ---
-    function updateLayersPanel() {
-        layersListEl.innerHTML = '';
-        const objects = canvas.getObjects().filter(obj => 
-            obj !== cropRect && obj !== currentSelectionRect
-        ).slice().reverse();
+function updateLayersPanel() {
+    const layersList = document.getElementById('layers-list');
+    layersList.innerHTML = '';
+    
+    layers.slice().reverse().forEach((layer, index) => {
+        const layerItem = document.createElement('li');
+        layerItem.className = 'layer-item';
+        layerItem.dataset.layerId = layer.id;
         
-        objects.forEach((obj) => {
-            const item = createLayerItem(obj);
-            layersListEl.appendChild(item);
-        });
-    }
-
-    function createLayerItem(obj) {
-        const item = document.createElement('li');
-        item.className = 'layer-item';
-        const fabricIndex = canvas.getObjects().indexOf(obj);
-        item.dataset.fabricIndex = fabricIndex; 
-
-        if (obj === canvas.getActiveObject()) item.classList.add('selected');
-        if (!obj.visible) item.classList.add('hidden-layer');
-        if (!obj.selectable) item.classList.add('locked-layer');
+        if (layer === currentLayer) {
+            layerItem.classList.add('selected');
+        }
         
-        const iconClass = { 
-            'i-text': 'fa-font', 
-            'rect': 'fa-square', 
-            'circle': 'fa-circle', 
-            'image': 'fa-image', 
-            'path': 'fa-paint-brush',
-            'line': 'fa-minus'
-        }[obj.type] || 'fa-cube';
-
-        item.innerHTML = `
+        layerItem.innerHTML = `
             <div class="layer-name">
-                <i class="fas ${iconClass}"></i>
-                <span>${obj.name || `Layer ${canvas.getObjects().length - fabricIndex}`}</span>
+                <i class="fas fa-layer-group"></i>
+                <span>${layer.name}</span>
             </div>
             <div class="layer-controls">
-                <button class="lock-layer"><i class="fas ${obj.selectable ? 'fa-unlock' : 'fa-lock'}"></i></button>
-                <button class="toggle-visibility"><i class="fas ${obj.visible ? 'fa-eye' : 'fa-eye-slash'}"></i></button>
+                <button class="layer-visibility-btn" title="${layer.visible ? 'Hide' : 'Show'}">
+                    <i class="fas fa-${layer.visible ? 'eye' : 'eye-slash'}"></i>
+                </button>
+                <button class="layer-lock-btn" title="${layer.locked ? 'Unlock' : 'Lock'}">
+                    <i class="fas fa-${layer.locked ? 'lock' : 'unlock'}"></i>
+                </button>
             </div>
         `;
+        
+        // Layer selection
+        layerItem.addEventListener('click', function(e) {
+            if (e.target.closest('.layer-controls')) return;
+            selectLayer(layer);
+        });
+        
+        // Visibility toggle
+        layerItem.querySelector('.layer-visibility-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleLayerVisibility(layer);
+        });
+        
+        // Lock toggle
+        layerItem.querySelector('.layer-lock-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleLayerLock(layer);
+        });
+        
+        layersList.appendChild(layerItem);
+    });
+}
 
-        item.addEventListener('click', (e) => {
-            if (!e.target.closest('.layer-controls')) {
-                canvas.setActiveObject(obj);
+function selectLayer(layer) {
+    currentLayer = layer;
+    updateLayersPanel();
+}
+
+function toggleLayerVisibility(layer) {
+    layer.visible = !layer.visible;
+    updateLayersPanel();
+    // TODO: Implement actual visibility toggle for objects
+}
+
+function toggleLayerLock(layer) {
+    layer.locked = !layer.locked;
+    updateLayersPanel();
+    // TODO: Implement actual lock functionality for objects
+}
+
+function moveLayerUp() {
+    if (!currentLayer) return;
+    
+    const index = layers.indexOf(currentLayer);
+    if (index < layers.length - 1) {
+        [layers[index], layers[index + 1]] = [layers[index + 1], layers[index]];
+        updateLayersPanel();
+        saveCanvasState();
+    }
+}
+
+function moveLayerDown() {
+    if (!currentLayer) return;
+    
+    const index = layers.indexOf(currentLayer);
+    if (index > 0) {
+        [layers[index], layers[index - 1]] = [layers[index - 1], layers[index]];
+        updateLayersPanel();
+        saveCanvasState();
+    }
+}
+
+function duplicateLayer() {
+    if (!currentLayer) return;
+    
+    const newLayer = {
+        id: Date.now(),
+        name: `${currentLayer.name} Copy`,
+        visible: true,
+        locked: false,
+        objects: [...currentLayer.objects]
+    };
+    
+    const index = layers.indexOf(currentLayer);
+    layers.splice(index + 1, 0, newLayer);
+    currentLayer = newLayer;
+    
+    updateLayersPanel();
+    saveCanvasState();
+}
+
+function deleteLayer() {
+    if (!currentLayer || layers.length <= 1) return;
+    
+    const index = layers.indexOf(currentLayer);
+    layers.splice(index, 1);
+    
+    // Select previous layer or first layer
+    currentLayer = layers[Math.max(0, index - 1)];
+    
+    updateLayersPanel();
+    saveCanvasState();
+}
+
+// ===== HISTORY MANAGEMENT =====
+function saveCanvasState() {
+    const state = JSON.stringify(canvas.toJSON());
+    
+    // Remove any states after current step
+    history = history.slice(0, historyStep + 1);
+    
+    // Add new state
+    history.push(state);
+    historyStep++;
+    
+    // Limit history size
+    if (history.length > 50) {
+        history.shift();
+        historyStep--;
+    }
+    
+    updateHistoryPanel();
+    updateUndoRedoButtons();
+}
+
+function undo() {
+    if (historyStep > 0) {
+        historyStep--;
+        const state = history[historyStep];
+        canvas.loadFromJSON(state, function() {
+            canvas.renderAll();
+            updateHistoryPanel();
+            updateUndoRedoButtons();
+        });
+    }
+}
+
+function redo() {
+    if (historyStep < history.length - 1) {
+        historyStep++;
+        const state = history[historyStep];
+        canvas.loadFromJSON(state, function() {
+            canvas.renderAll();
+            updateHistoryPanel();
+            updateUndoRedoButtons();
+        });
+    }
+}
+
+function updateHistoryPanel() {
+    const historyList = document.getElementById('history-list');
+    historyList.innerHTML = '';
+    
+    history.forEach((state, index) => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        
+        if (index === historyStep) {
+            historyItem.classList.add('current');
+        }
+        
+        historyItem.innerHTML = `
+            <i class="fas fa-history"></i>
+            <span>Step ${index + 1}</span>
+        `;
+        
+        historyItem.addEventListener('click', function() {
+            historyStep = index;
+            canvas.loadFromJSON(state, function() {
                 canvas.renderAll();
-            }
-        });
-        item.querySelector('.lock-layer').addEventListener('click', (e) => {
-            e.stopPropagation();
-            obj.set({ selectable: !obj.selectable, hasControls: !obj.selectable, hasBorders: !obj.selectable });
-            canvas.renderAll();
-            updateUI(null, true);
-        });
-        item.querySelector('.toggle-visibility').addEventListener('click', (e) => {
-            e.stopPropagation();
-            obj.set('visible', !obj.visible);
-            canvas.renderAll();
-            updateUI(null, true);
-        });
-        
-        item.draggable = true;
-        item.addEventListener('dragstart', (e) => {
-            e.target.classList.add('dragging');
-            e.dataTransfer.setData('text/plain', e.target.dataset.fabricIndex);
-        });
-        item.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const targetItem = e.target.closest('.layer-item');
-            if (targetItem) {
-                targetItem.classList.add('drag-over');
-            }
-        });
-        item.addEventListener('dragleave', (e) => {
-             const targetItem = e.target.closest('.layer-item');
-             if (targetItem) {
-                targetItem.classList.remove('drag-over');
-            }
-        });
-        item.addEventListener('drop', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('.layer-item.drag-over').forEach(el => el.classList.remove('drag-over'));
-
-            const draggedFabricIndex = parseInt(e.dataTransfer.getData('text/plain'));
-            const dropTargetItem = e.target.closest('.layer-item');
-            if (!dropTargetItem) return;
-            const dropFabricIndex = parseInt(dropTargetItem.dataset.fabricIndex);
-            
-            const objects = canvas.getObjects();
-            const [removed] = objects.splice(draggedFabricIndex, 1);
-            objects.splice(dropFabricIndex, 0, removed);
-            canvas._objects = objects;
-            
-            canvas.renderAll();
-            updateUI(null, true);
-        });
-        item.addEventListener('dragend', (e) => {
-            e.target.classList.remove('dragging');
-            document.querySelectorAll('.layer-item.drag-over').forEach(el => el.classList.remove('drag-over'));
-        });
-
-        return item;
-    }
-
-    function updatePropertiesPanel(obj) {
-        propertiesPanelContent.innerHTML = '';
-        
-        if (obj || activeTool === 'brush' || activeTool === 'eraser' || activeTool === 'color-picker') {
-            propertiesPanelContent.style.display = 'flex';
-            propertiesPanelPlaceholder.style.display = 'none';
-
-            if (obj) {
-                 propertiesPanelContent.innerHTML += `<h3 class="panel-title">${obj.name}</h3>`;
-                const commonProps = `
-                    <div class="prop-group">
-                        <label>Opacity</label>
-                        <input type="range" min="0" max="1" step="0.01" value="${obj.opacity}" data-prop="opacity">
-                    </div>
-                    <div class="prop-grid">
-                        <div class="prop-group"><label>X</label><input type="number" value="${Math.round(obj.left)}" data-prop="left"></div>
-                        <div class="prop-group"><label>Y</label><input type="number" value="${Math.round(obj.top)}" data-prop="top"></div>
-                    </div>
-                    <div class="prop-group">
-                        <label>Rotation</label>
-                        <input type="range" min="0" max="360" value="${Math.round(obj.angle)}" data-prop="angle">
-                    </div>
-                    <div class="prop-group">
-                        <label>Blend Mode</label>
-                        <select data-prop="globalCompositeOperation">
-                            <option value="source-over" ${obj.globalCompositeOperation === 'source-over' ? 'selected' : ''}>Normal</option>
-                            <option value="multiply" ${obj.globalCompositeOperation === 'multiply' ? 'selected' : ''}>Multiply</option>
-                            <option value="screen" ${obj.globalCompositeOperation === 'screen' ? 'selected' : ''}>Screen</option>
-                            <option value="overlay" ${obj.globalCompositeOperation === 'overlay' ? 'selected' : ''}>Overlay</option>
-                            <option value="darken" ${obj.globalCompositeOperation === 'darken' ? 'selected' : ''}>Darken</option>
-                            <option value="lighten" ${obj.globalCompositeOperation === 'lighten' ? 'selected' : ''}>Lighten</option>
-                            <option value="color-dodge" ${obj.globalCompositeOperation === 'color-dodge' ? 'selected' : ''}>Color Dodge</option>
-                            <option value="color-burn" ${obj.globalCompositeOperation === 'color-burn' ? 'selected' : ''}>Color Burn</option>
-                            <option value="hard-light" ${obj.globalCompositeOperation === 'hard-light' ? 'selected' : ''}>Hard Light</option>
-                            <option value="soft-light" ${obj.globalCompositeOperation === 'soft-light' ? 'selected' : ''}>Soft Light</option>
-                            <option value="difference" ${obj.globalCompositeOperation === 'difference' ? 'selected' : ''}>Difference</option>
-                            <option value="exclusion" ${obj.globalCompositeOperation === 'exclusion' ? 'selected' : ''}>Exclusion</option>
-                            <option value="hue" ${obj.globalCompositeOperation === 'hue' ? 'selected' : ''}>Hue</option>
-                            <option value="saturation" ${obj.globalCompositeOperation === 'saturation' ? 'selected' : ''}>Saturation</option>
-                            <option value="color" ${obj.globalCompositeOperation === 'color' ? 'selected' : ''}>Color</option>
-                            <option value="luminosity" ${obj.globalCompositeOperation === 'luminosity' ? 'selected' : ''}>Luminosity</option>
-                        </select>
-                    </div>`;
-                propertiesPanelContent.innerHTML += commonProps;
-                
-                if (obj.type === 'i-text') {
-                    const textProps = `<div class="prop-group"><label>Font Size</label><input type="number" value="${obj.fontSize}" data-prop="fontSize"></div>
-                                       <div class="prop-group"><label>Fill Color</label><input type="color" value="${obj.fill}" data-prop="fill"></div>
-                                       <div class="prop-group"><label>Font Family</label><input type="text" value="${obj.fontFamily}" data-prop="fontFamily"></div>`;
-                    propertiesPanelContent.innerHTML += textProps;
-                } else if (obj.type === 'rect') {
-                    const rectProps = `<div class="prop-group"><label>Fill Color</label><input type="color" value="${obj.fill}" data-prop="fill"></div>
-                                        <div class="prop-group"><label>Stroke Color</label><input type="color" value="${obj.stroke}" data-prop="stroke"></div>
-                                        <div class="prop-group"><label>Stroke Width</label><input type="number" value="${obj.strokeWidth}" data-prop="strokeWidth"></div>
-                                        <div class="prop-group"><label>Border Radius</label><input type="number" min="0" value="${obj.rx}" data-prop="rx"></div>`;
-                    propertiesPanelContent.innerHTML += rectProps;
-                } else if (obj.type === 'circle') {
-                     const circleProps = `<div class="prop-group"><label>Fill Color</label><input type="color" value="${obj.fill}" data-prop="fill"></div>
-                                        <div class="prop-group"><label>Stroke Color</label><input type="color" value="${obj.stroke}" data-prop="stroke"></div>
-                                        <div class="prop-group"><label>Stroke Width</label><input type="number" value="${obj.strokeWidth}" data-prop="strokeWidth"></div>`;
-                    propertiesPanelContent.innerHTML += circleProps;
-                } else if (obj.type === 'image') {
-                    const imageProps = `<div class="prop-group">
-                                            <label>Image Filters</label>
-                                            <button id="add-blur-filter-btn" class="primary-btn">Add Blur</button>
-                                        </div>`;
-                    propertiesPanelContent.innerHTML += imageProps;
-                } else if (obj.type === 'path' || obj.type === 'line') {
-                     const pathProps = `<div class="prop-group"><label>Stroke Color</label><input type="color" value="${obj.stroke}" data-prop="stroke"></div>
-                                        <div class="prop-group"><label>Stroke Width</label><input type="number" value="${obj.strokeWidth}" data-prop="strokeWidth"></div>
-                                        <div class="prop-group"><label>Line Cap</label>
-                                            <select data-prop="strokeLineCap">
-                                                <option value="butt" ${obj.strokeLineCap === 'butt' ? 'selected' : ''}>Butt</option>
-                                                <option value="round" ${obj.strokeLineCap === 'round' ? 'selected' : ''}>Round</option>
-                                                <option value="square" ${obj.strokeLineCap === 'square' ? 'selected' : ''}>Square</option>
-                                            </select>
-                                        </div>
-                                        <div class="prop-group"><label>Line Join</label>
-                                            <select data-prop="strokeLineJoin">
-                                                <option value="miter" ${obj.strokeLineJoin === 'miter' ? 'selected' : ''}>Miter</option>
-                                                <option value="round" ${obj.strokeLineJoin === 'round' ? 'selected' : ''}>Round</option>
-                                                <option value="bevel" ${obj.strokeLineJoin === 'bevel' ? 'selected' : ''}>Bevel</option>
-                                            </select>
-                                        </div>`;
-                     propertiesPanelContent.innerHTML += pathProps;
-                }
-
-            } else if (activeTool === 'brush' || activeTool === 'eraser') {
-                 propertiesPanelContent.innerHTML += `<h3 class="panel-title">${activeTool === 'eraser' ? 'Eraser' : 'Brush'} Tool</h3>`;
-                 const brushToolProps = `<div class="prop-group">
-                                         ${activeTool === 'brush' ? `<label>Brush Color</label><input type="color" value="${canvas.freeDrawingBrush.color}" data-tool-prop="color">` : ''}
-                                     </div>
-                                     <div class="prop-group"><label>Brush Size</label><input type="range" min="1" max="100" value="${canvas.freeDrawingBrush.width}" data-tool-prop="width"></div>
-                                     <div class="prop-group"><label>Line Cap</label>
-                                        <select data-tool-prop="strokeLineCap">
-                                            <option value="butt" ${canvas.freeDrawingBrush.strokeLineCap === 'butt' ? 'selected' : ''}>Butt</option>
-                                            <option value="round" ${canvas.freeDrawingBrush.strokeLineCap === 'round' ? 'selected' : ''}>Round</option>
-                                            <option value="square" ${canvas.freeDrawingBrush.strokeLineCap === 'square' ? 'selected' : ''}>Square</option>
-                                        </select>
-                                    </div>
-                                    <div class="prop-group"><label>Line Join</label>
-                                        <select data-tool-prop="strokeLineJoin">
-                                            <option value="miter" ${canvas.freeDrawingBrush.strokeLineCap === 'miter' ? 'selected' : ''}>Miter</option>
-                                            <option value="round" ${canvas.freeDrawingBrush.strokeLineCap === 'round' ? 'selected' : ''}>Round</option>
-                                            <option value="bevel" ${canvas.freeDrawingBrush.strokeLineJoin === 'bevel' ? 'selected' : ''}>Bevel</option>
-                                        </select>
-                                    </div>`;
-                 propertiesPanelContent.innerHTML += brushToolProps;
-            } else if (activeTool === 'color-picker') {
-                propertiesPanelContent.innerHTML += `<h3 class="panel-title">Color Picker</h3>
-                    <p>Click on the canvas to select a color.</p>
-                    <div class="prop-group">
-                        <label>Last Picked Color:</label>
-                        <input type="color" id="last-picked-color" value="#000000" disabled>
-                    </div>`;
-            } else if (activeTool === 'crop') {
-                propertiesPanelContent.innerHTML += `<h3 class="panel-title">Crop Tool</h3>
-                    <p>Drag on the canvas to define a crop area.</p>`;
-            } else if (activeTool === 'zoom') {
-                 propertiesPanelContent.innerHTML += `<h3 class="panel-title">Zoom Tool</h3>
-                    <p>Click to zoom in. Shift + click to zoom out. Use scroll wheel for continuous zoom.</p>`;
-            } else if (activeTool === 'hand') {
-                propertiesPanelContent.innerHTML += `<h3 class="panel-title">Hand Tool</h3>
-                    <p>Drag the canvas to pan around.</p>`;
-            } else if (activeTool.startsWith('shape')) {
-                propertiesPanelContent.innerHTML += `<h3 class="panel-title">Shape Tool</h3>
-                    <p>Select a shape from the left panel, then drag on the canvas to draw it.</p>`;
-            }
-
-
-            propertiesPanelContent.querySelectorAll('input, select').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const prop = e.target.dataset.prop;
-                    const toolProp = e.target.dataset.toolProp;
-                    let value = e.target.value;
-                    if (e.target.type === 'number' || e.target.type === 'range') value = parseFloat(value);
-                    
-                    if(prop && obj) {
-                        obj.set(prop, value);
-                        if (prop === 'rx') obj.set('ry', value);
-                    }
-                    if(toolProp) canvas.freeDrawingBrush[toolProp] = value;
-                    
-                    canvas.renderAll();
-                });
+                updateHistoryPanel();
+                updateUndoRedoButtons();
             });
+        });
+        
+        historyList.appendChild(historyItem);
+    });
+}
 
-            const addBlurFilterBtn = document.getElementById('add-blur-filter-btn');
-            if (addBlurFilterBtn) {
-                addBlurFilterBtn.addEventListener('click', () => {
-                    const activeObject = canvas.getActiveObject();
-                    if (activeObject && activeObject.type === 'image') {
-                        activeObject.filters.push(new fabric.Image.filters.Blur({
-                            blur: 0.5
-                        }));
-                        activeObject.applyFilters();
-                        canvas.renderAll();
-                        saveCanvasState();
-                        showCustomAlert('Blur filter applied. Further controls for blur amount coming soon!');
-                    }
-                });
-            }
+function updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+    
+    undoBtn.disabled = historyStep <= 0;
+    redoBtn.disabled = historyStep >= history.length - 1;
+}
+
+// ===== AI PANEL =====
+function toggleAIPanel() {
+    const aiPanel = document.getElementById('ai-panel');
+    const aiBtn = document.getElementById('ai-toggle-btn');
+    const mainLayout = document.querySelector('.main-layout');
+    
+    const isActive = aiPanel.classList.contains('active');
+    
+    if (isActive) {
+        aiPanel.classList.remove('active');
+        aiBtn.classList.remove('active');
+        mainLayout.classList.remove('ai-active');
+    } else {
+        aiPanel.classList.add('active');
+        aiBtn.classList.add('active');
+        mainLayout.classList.add('ai-active');
+    }
+}
+
+function closeAIPanel() {
+    const aiPanel = document.getElementById('ai-panel');
+    const aiBtn = document.getElementById('ai-toggle-btn');
+    const mainLayout = document.querySelector('.main-layout');
+    
+    aiPanel.classList.remove('active');
+    aiBtn.classList.remove('active');
+    mainLayout.classList.remove('ai-active');
+}
+
+function generateAIImage() {
+    const prompt = document.getElementById('ai-prompt').value;
+    const negativePrompt = document.getElementById('ai-negative-prompt').value;
+    const model = document.getElementById('ai-model').value;
+    const style = document.getElementById('ai-style-preset').value;
+    const aspectRatio = document.getElementById('ai-aspect-ratio').value;
+    const quality = document.getElementById('ai-quality').value;
+    
+    if (!prompt.trim()) {
+        showAlert('Please enter a prompt to generate an image.');
+        return;
+    }
+    
+    // Show loading state
+    const generateBtn = document.getElementById('generate-ai-image-btn');
+    const originalText = generateBtn.innerHTML;
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Generating...</span>';
+    generateBtn.disabled = true;
+    generateBtn.classList.add('loading');
+    
+    // Simulate AI generation (replace with actual API call)
+    setTimeout(() => {
+        // Generate a placeholder image
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set dimensions based on aspect ratio
+        let width = 512, height = 512;
+        switch (aspectRatio) {
+            case '16:9':
+                width = 512; height = 288;
+                break;
+            case '9:16':
+                width = 288; height = 512;
+                break;
+            case '4:3':
+                width = 512; height = 384;
+                break;
+            case '3:2':
+                width = 512; height = 341;
+                break;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        gradient.addColorStop(0, '#800080');
+        gradient.addColorStop(0.5, '#ba55d3');
+        gradient.addColorStop(1, '#da70d6');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+        
+        // Add some text
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 24px Inter';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 4;
+        ctx.fillText('AI Generated', width / 2, height / 2 - 10);
+        ctx.font = '16px Inter';
+        ctx.fillText('Sample Image', width / 2, height / 2 + 20);
+        
+        const dataURL = canvas.toDataURL();
+        
+        // Show result
+        const aiResult = document.getElementById('ai-result');
+        const aiImage = document.getElementById('ai-generated-image');
+        
+        aiImage.src = dataURL;
+        aiResult.style.display = 'block';
+        
+        // Reset button
+        generateBtn.innerHTML = originalText;
+        generateBtn.disabled = false;
+        generateBtn.classList.remove('loading');
+        
+    }, 2000);
+}
+
+function regenerateAIImage() {
+    generateAIImage();
+}
+
+function addAIImageToCanvas() {
+    const aiImage = document.getElementById('ai-generated-image');
+    
+    if (aiImage.src) {
+        fabric.Image.fromURL(aiImage.src, function(img) {
+            img.set({
+                left: canvas.width / 2 - img.width / 2,
+                top: canvas.height / 2 - img.height / 2
+            });
+            
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            canvas.renderAll();
+            saveCanvasState();
+        });
+        
+        // Hide AI result
+        document.getElementById('ai-result').style.display = 'none';
+    }
+}
+
+// ===== CANVAS CONTROLS =====
+function toggleGrid() {
+    const grid = document.getElementById('canvas-grid');
+    const btn = document.getElementById('grid-toggle');
+    
+    gridVisible = !gridVisible;
+    
+    if (gridVisible) {
+        grid.classList.add('active');
+        btn.classList.add('active');
+    } else {
+        grid.classList.remove('active');
+        btn.classList.remove('active');
+    }
+}
+
+function toggleRulers() {
+    const rulers = document.getElementById('canvas-rulers');
+    const btn = document.getElementById('rulers-toggle');
+    
+    rulersVisible = !rulersVisible;
+    
+    if (rulersVisible) {
+        rulers.classList.add('active');
+        btn.classList.add('active');
+    } else {
+        rulers.classList.remove('active');
+        btn.classList.remove('active');
+    }
+}
+
+function fitToScreen() {
+    const container = document.getElementById('canvas-container');
+    const canvasElement = document.getElementById('main-canvas');
+    const containerRect = container.getBoundingClientRect();
+    
+    const scaleX = (containerRect.width - 80) / canvasElement.width;
+    const scaleY = (containerRect.height - 80) / canvasElement.height;
+    const scale = Math.min(scaleX, scaleY, 1);
+    
+    canvasElement.style.transform = `scale(${scale})`;
+    
+    // Update zoom display
+    const zoomDisplay = document.getElementById('zoom-level');
+    if (zoomDisplay) {
+        zoomDisplay.innerText = `${Math.round(scale * 100)}%`;
+    }
+    
+    zoomLevel = Math.round(scale * 100);
+}
+
+// ===== ZOOM CONTROLS =====
+function zoomIn() {
+    const newZoom = Math.min(zoomLevel + 10, 300);
+    setZoom(newZoom);
+}
+
+function zoomOut() {
+    const newZoom = Math.max(zoomLevel - 10, 10);
+    setZoom(newZoom);
+}
+
+function setZoom(zoom) {
+    zoomLevel = zoom;
+    const scale = zoom / 100;
+    
+    const canvasElement = document.getElementById('main-canvas');
+    canvasElement.style.transform = `scale(${scale})`;
+    
+    // Update zoom display
+    const zoomDisplay = document.getElementById('zoom-level');
+    if (zoomDisplay) {
+        zoomDisplay.innerText = `${zoom}%`;
+    }
+    
+    // Update zoom slider
+    const zoomSlider = document.getElementById('zoom-slider');
+    if (zoomSlider) {
+        zoomSlider.value = zoom;
+    }
+}
+
+function handleZoomClick(event) {
+    if (event.shiftKey) {
+        zoomOut();
+    } else {
+        zoomIn();
+    }
+}
+
+// ===== COLOR HANDLING =====
+function handleColorChange(event) {
+    currentColor = event.target.value;
+    
+    // Update color preview
+    document.getElementById('color-current').style.background = currentColor;
+    
+    // Update selected object color if applicable
+    if (selectedObject) {
+        if (selectedObject.type === 'i-text' || selectedObject.type === 'text') {
+            selectedObject.set('fill', currentColor);
         } else {
-            propertiesPanelContent.style.display = 'none';
-            propertiesPanelPlaceholder.style.display = 'flex';
+            selectedObject.set('stroke', currentColor);
         }
+        canvas.renderAll();
+        saveCanvasState();
     }
+    
+    // Update brush color
+    if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = currentColor;
+    }
+    
+    // Add to recent colors
+    addToRecentColors(currentColor);
+}
 
-    // --- AI GENERATION FUNCTIONS ---
-    async function generateImage() {
-        showCustomAlert('Generating image... This may take a moment.');
-        generateAiImageBtn.disabled = true;
-        sendToEditBtn.classList.add('hidden');
+function addToRecentColors(color) {
+    const recentColors = document.getElementById('recent-colors');
+    
+    // Check if color already exists
+    const existing = recentColors.querySelector(`[data-color="${color}"]`);
+    if (existing) return;
+    
+    // Create new swatch
+    const swatch = document.createElement('div');
+    swatch.className = 'color-swatch';
+    swatch.style.background = color;
+    swatch.dataset.color = color;
+    
+    swatch.addEventListener('click', function() {
+        document.getElementById('color-picker').value = color;
+        handleColorChange({ target: { value: color } });
+    });
+    
+    // Add to beginning
+    recentColors.insertBefore(swatch, recentColors.firstChild);
+    
+    // Limit to 8 recent colors
+    while (recentColors.children.length > 8) {
+        recentColors.removeChild(recentColors.lastChild);
+    }
+}
 
-        const model = aiModelSelect.value;
-        const prompt = aiPromptInput.value;
-        const negative_prompt = aiNegativePromptInput.value;
-        const style_preset = aiStylePresetSelect.value === 'none' ? undefined : aiStylePresetSelect.value;
-        const aspect_ratio = aiAspectRatioSelect.value;
-        const num_images = parseInt(aiNumImagesInput.value);
-        const sampling_method = aiSamplingMethodSelect.value;
-        const sampling_steps = parseInt(aiSamplingStepsInput.value);
-        const guidance_scale = parseFloat(aiGuidanceScaleInput.value);
-        const seed = aiSeedInput.value ? parseInt(aiSeedInput.value) : undefined;
-        const img2img_base64 = aiImg2ImgBase64Data.value;
-        const inpainting_prompt = aiInpaintingPromptInput.value;
-        const outpainting_prompt = aiOutpaintingPromptInput.value;
+// Setup color swatches
+document.querySelectorAll('.color-swatch[data-color]').forEach(swatch => {
+    swatch.addEventListener('click', function() {
+        const color = this.dataset.color;
+        document.getElementById('color-picker').value = color;
+        handleColorChange({ target: { value: color } });
+    });
+});
 
-        let payload = {
-            instances: { prompt: prompt },
-            parameters: {
-                sampleCount: num_images,
-                sampler: sampling_method,
-                steps: sampling_steps,
-                cfgScale: guidance_scale,
-                aspectRatio: aspect_ratio,
-                seed: seed,
-                negativePrompt: negative_prompt,
-                stylePreset: style_preset
+// ===== IMAGE UPLOAD =====
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        fabric.Image.fromURL(e.target.result, function(img) {
+            // Scale image to fit canvas if too large
+            const maxWidth = canvas.width * 0.8;
+            const maxHeight = canvas.height * 0.8;
+            
+            if (img.width > maxWidth || img.height > maxHeight) {
+                const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+                img.scale(scale);
             }
-        };
-
-        const apiKey = AI_API_KEY; 
-        let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${apiKey}`; 
-
-        if (img2img_base64) {
-            payload.instances.image = { bytesBase64Encoded: img2img_base64 };
-        }
-        
-        if (inpainting_prompt && canvas.getActiveObject()) {
-            showCustomAlert('Inpainting functionality with selected area is a placeholder. Gemini API does not directly support inpainting via this endpoint.');
-        } else if (outpainting_prompt) {
-            showCustomAlert('Outpainting functionality with extended canvas is a placeholder. Gemini API does not directly support outpainting via this endpoint.');
-        }
-
-
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+            
+            // Center the image
+            img.set({
+                left: canvas.width / 2 - (img.width * img.scaleX) / 2,
+                top: canvas.height / 2 - (img.height * img.scaleY) / 2
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('AI Generation Error:', errorData);
-                showCustomAlert(`AI generation failed: ${errorData.error.message || 'Unknown error.'}`);
-                return;
-            }
-
-            const result = await response.json();
-            if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-                const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-                aiImg2ImgPreview.src = imageUrl;
-                aiImg2ImgPreview.style.display = 'block';
-                sendToEditBtn.classList.remove('hidden');
-                showCustomAlert('Image generated successfully!');
-            } else {
-                showCustomAlert('No image generated. Please try again with a different prompt.');
-            }
-        } catch (error) {
-            console.error('Error during AI image generation:', error);
-            showCustomAlert('An error occurred during AI image generation. Please check your network connection or API key.');
-        } finally {
-            generateAiImageBtn.disabled = false;
-        }
-    }
-
-    async function generateMaskForObject(obj) {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
-
-        tempCtx.fillStyle = 'black';
-        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-        const originalFill = obj.fill;
-        const originalOpacity = obj.opacity;
-        
-        obj.set({ fill: 'white', opacity: 1 });
-        const originalCanvas = canvas;
-        fabric.Object.prototype.canvas = tempCanvas;
-        obj.render(tempCtx);
-        fabric.Object.prototype.canvas = originalCanvas;
-        obj.set({ fill: originalFill, opacity: originalOpacity });
-
-        return tempCanvas.toDataURL('image/png').split(',')[1];
-    }
-
-
-    function handleAiImageToImageUpload(e) {
-        const file = e.target.files[0];
-        if (!file) {
-            aiImg2ImgPreview.style.display = 'none';
-            aiImg2ImgBase64Data.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (f) => {
-            aiImg2ImgPreview.src = f.target.result;
-            aiImg2ImgPreview.style.display = 'block';
-            aiImg2ImgBase64Data.value = f.target.result.split(',')[1];
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // --- CANVAS EXPORT ---
-    function exportCanvas() {
-        if (!canvas.getObjects().length) {
-            showCustomAlert('Canvas is empty. Add some content before exporting.');
-            return;
-        }
-
-        const dataURL = canvas.toDataURL({
-            format: 'png',
-            quality: 1.0
+            
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            canvas.renderAll();
+            saveCanvasState();
         });
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input
+    event.target.value = '';
+}
 
-        const link = document.createElement('a');
-        link.href = dataURL;
-        link.download = 'visual-composer-pro-image.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showCustomAlert('Image exported successfully as PNG!');
+// ===== CROP FUNCTIONALITY =====
+function startCrop() {
+    if (!selectedObject || selectedObject.type !== 'image') {
+        showAlert('Please select an image to crop.');
+        return;
     }
+    
+    cropMode = true;
+    canvas.selection = false;
+    
+    // Create crop rectangle
+    cropRect = new fabric.Rect({
+        left: selectedObject.left,
+        top: selectedObject.top,
+        width: selectedObject.width * selectedObject.scaleX,
+        height: selectedObject.height * selectedObject.scaleY,
+        fill: 'transparent',
+        stroke: '#800080',
+        strokeWidth: 2,
+        strokeDashArray: [5, 5],
+        selectable: true,
+        evented: true
+    });
+    
+    canvas.add(cropRect);
+    canvas.setActiveObject(cropRect);
+    
+    // Show crop actions
+    document.getElementById('crop-actions').style.display = 'flex';
+}
 
-    // --- KEYBOARD SHORTCUTS ---
-    function handleKeyDown(e) {
+function applyCrop() {
+    if (!cropMode || !cropRect || !selectedObject) return;
+    
+    // TODO: Implement actual cropping logic
+    // This would involve creating a new image with the cropped dimensions
+    
+    cancelCrop();
+    showAlert('Crop functionality will be implemented in a future update.');
+}
+
+function cancelCrop() {
+    if (cropRect) {
+        canvas.remove(cropRect);
+        cropRect = null;
+    }
+    
+    cropMode = false;
+    canvas.selection = true;
+    document.getElementById('crop-actions').style.display = 'none';
+}
+
+// ===== OBJECT OPERATIONS =====
+function cutObject() {
+    if (selectedObject) {
+        copyObject();
+        deleteObject();
+    }
+}
+
+function copyObject() {
+    if (selectedObject) {
+        selectedObject.clone(function(cloned) {
+            clipboard = cloned;
+        });
+    }
+}
+
+function pasteObject() {
+    if (clipboard) {
+        clipboard.clone(function(cloned) {
+            cloned.set({
+                left: cloned.left + 10,
+                top: cloned.top + 10,
+                evented: true
+            });
+            
+            canvas.add(cloned);
+            canvas.setActiveObject(cloned);
+            canvas.renderAll();
+            saveCanvasState();
+        });
+    }
+}
+
+function duplicateObject() {
+    if (selectedObject) {
+        selectedObject.clone(function(cloned) {
+            cloned.set({
+                left: cloned.left + 10,
+                top: cloned.top + 10,
+                evented: true
+            });
+            
+            canvas.add(cloned);
+            canvas.setActiveObject(cloned);
+            canvas.renderAll();
+            saveCanvasState();
+        });
+    }
+}
+
+function deleteObject() {
+    if (selectedObject) {
+        canvas.remove(selectedObject);
+        selectedObject = null;
+        updatePropertiesPanel();
+        saveCanvasState();
+    }
+}
+
+function selectAll() {
+    const objects = canvas.getObjects();
+    if (objects.length > 0) {
+        canvas.discardActiveObject();
+        const selection = new fabric.ActiveSelection(objects, {
+            canvas: canvas
+        });
+        canvas.setActiveObject(selection);
+        canvas.renderAll();
+    }
+}
+
+function deselectAll() {
+    canvas.discardActiveObject();
+    canvas.renderAll();
+}
+
+// ===== TRANSFORM OPERATIONS =====
+function rotateImage() {
+    if (selectedObject) {
+        selectedObject.set('angle', selectedObject.angle + 90);
+        canvas.renderAll();
+        saveCanvasState();
+    }
+}
+
+function flipHorizontal() {
+    if (selectedObject) {
+        selectedObject.set('flipX', !selectedObject.flipX);
+        canvas.renderAll();
+        saveCanvasState();
+    }
+}
+
+function flipVertical() {
+    if (selectedObject) {
+        selectedObject.set('flipY', !selectedObject.flipY);
+        canvas.renderAll();
+        saveCanvasState();
+    }
+}
+
+// ===== EFFECTS =====
+function applyEffect(effect) {
+    if (!selectedObject || selectedObject.type !== 'image') {
+        showAlert('Please select an image to apply effects.');
+        return;
+    }
+    
+    // TODO: Implement actual image effects
+    // This would require fabric.js filters or custom image processing
+    
+    switch (effect) {
+        case 'blur':
+            showAlert('Blur effect will be implemented in a future update.');
+            break;
+        case 'sharpen':
+            showAlert('Sharpen effect will be implemented in a future update.');
+            break;
+        case 'brightness':
+            showAlert('Brightness effect will be implemented in a future update.');
+            break;
+        case 'contrast':
+            showAlert('Contrast effect will be implemented in a future update.');
+            break;
+        case 'grayscale':
+            showAlert('Grayscale effect will be implemented in a future update.');
+            break;
+        case 'sepia':
+            showAlert('Sepia effect will be implemented in a future update.');
+            break;
+        case 'invert':
+            showAlert('Invert effect will be implemented in a future update.');
+            break;
+    }
+}
+
+// ===== EXPORT FUNCTIONALITY =====
+function showExportOptions() {
+    // Create a simple export menu
+    const menu = document.createElement('div');
+    menu.className = 'export-menu';
+    menu.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--glass-bg);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-xl);
+        padding: var(--spacing-xl);
+        box-shadow: var(--shadow-xl);
+        z-index: var(--z-modal);
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+        min-width: 200px;
+    `;
+    
+    menu.innerHTML = `
+        <h3 style="margin: 0; color: var(--text-primary); text-align: center; margin-bottom: var(--spacing-md);">Export Options</h3>
+        <button onclick="exportCanvas('png')" class="primary-btn">
+            <i class="fas fa-download"></i>
+            <span>Export as PNG</span>
+        </button>
+        <button onclick="exportCanvas('jpg')" class="primary-btn">
+            <i class="fas fa-download"></i>
+            <span>Export as JPG</span>
+        </button>
+        <button onclick="exportCanvas('svg')" class="primary-btn">
+            <i class="fas fa-download"></i>
+            <span>Export as SVG</span>
+        </button>
+        <button onclick="this.parentElement.remove()" class="secondary-btn">Cancel</button>
+    `;
+    
+    document.body.appendChild(menu);
+    
+    // Remove menu when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function(e) {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+            }
+        }, { once: true });
+    }, 100);
+}
+
+function exportCanvas(format) {
+    let dataURL;
+    let filename;
+    
+    switch (format) {
+        case 'png':
+            dataURL = canvas.toDataURL('image/png');
+            filename = 'canvas-export.png';
+            break;
+        case 'jpg':
+            dataURL = canvas.toDataURL('image/jpeg', 0.9);
+            filename = 'canvas-export.jpg';
+            break;
+        case 'svg':
+            dataURL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(canvas.toSVG());
+            filename = 'canvas-export.svg';
+            break;
+        default:
+            return;
+    }
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataURL;
+    link.click();
+    
+    // Remove export menu if it exists
+    const exportMenu = document.querySelector('.export-menu');
+    if (exportMenu) {
+        exportMenu.remove();
+    }
+}
+
+// ===== PROJECT MANAGEMENT =====
+function newProject() {
+    if (confirm('Are you sure you want to create a new project? Unsaved changes will be lost.')) {
+        canvas.clear();
+        canvas.backgroundColor = '#ffffff';
+        canvas.renderAll();
+        
+        // Reset variables
+        layers = [];
+        currentLayer = null;
+        selectedObject = null;
+        history = [];
+        historyStep = -1;
+        
+        // Add default layer
+        addNewLayer('Background');
+        
+        // Update UI
+        updateCanvasInfo();
+        updatePropertiesPanel();
+        updateLayersPanel();
+        updateHistoryPanel();
+        
+        saveCanvasState();
+    }
+}
+
+function openImage() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = handleImageUpload;
+    input.click();
+}
+
+function saveProject() {
+    const projectData = {
+        canvas: canvas.toJSON(),
+        layers: layers,
+        metadata: {
+            name: document.getElementById('canvas-name').textContent,
+            created: new Date().toISOString(),
+            version: '1.0'
+        }
+    };
+    
+    const dataStr = JSON.stringify(projectData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = 'visual-composer-project.json';
+    link.click();
+}
+
+function resizeCanvas() {
+    const width = prompt('Enter new width:', canvas.width);
+    const height = prompt('Enter new height:', canvas.height);
+    
+    if (width && height) {
+        canvas.setDimensions({
+            width: parseInt(width),
+            height: parseInt(height)
+        });
+        canvas.renderAll();
+        updateCanvasInfo();
+        saveCanvasState();
+    }
+}
+
+// ===== UTILITY FUNCTIONS =====
+function updateCanvasInfo() {
+    document.getElementById('canvas-dimensions').textContent = `${canvas.width} × ${canvas.height}`;
+}
+
+function showAlert(message) {
+    const modal = document.getElementById('custom-alert-modal');
+    const messageEl = document.getElementById('custom-alert-message');
+    
+    messageEl.innerHTML = message;
+    modal.classList.add('active');
+    
+    document.getElementById('custom-alert-ok-btn').onclick = function() {
+        modal.classList.remove('active');
+    };
+}
+
+function showConfirm(title, message, callback) {
+    const modal = document.getElementById('confirm-modal');
+    const titleEl = document.getElementById('confirm-title');
+    const messageEl = document.getElementById('confirm-message');
+    
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    modal.classList.add('active');
+    
+    document.getElementById('confirm-ok-btn').onclick = function() {
+        modal.classList.remove('active');
+        callback(true);
+    };
+    
+    document.getElementById('confirm-cancel-btn').onclick = function() {
+        modal.classList.remove('active');
+        callback(false);
+    };
+}
+
+// ===== PANELS SETUP =====
+function setupPanels() {
+    updateLayersPanel();
+    updatePropertiesPanel();
+    updateHistoryPanel();
+}
+
+function setupCollapsiblePanels() {
+    document.querySelectorAll('.collapsible-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const panel = this.closest('.collapsible-panel');
+            panel.classList.toggle('collapsed');
+        });
+    });
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Prevent default for our shortcuts
         if (e.ctrlKey || e.metaKey) {
             switch (e.key.toLowerCase()) {
                 case 'z':
                     e.preventDefault();
-                    undo();
+                    if (e.shiftKey) {
+                        redo();
+                    } else {
+                        undo();
+                    }
                     break;
                 case 'y':
                     e.preventDefault();
                     redo();
                     break;
-                case 's':
-                    e.preventDefault();
-                    showCustomAlert('Save functionality is not yet implemented (Ctrl/Cmd+S for saving project state). Use "Export as PNG" for now.');
-                    break;
-                case 'a':
-                    e.preventDefault();
-                    if (canvas.getObjects().length > 0) {
-                        canvas.discardActiveObject();
-                        const group = new fabric.Group(canvas.getObjects());
-                        canvas.setActiveObject(group);
-                        canvas.renderAll();
-                        updateUI(null, false);
-                    }
-                    break;
-                case 'd':
-                    e.preventDefault();
-                    canvas.discardActiveObject().renderAll();
-                    updateUI(null, false);
-                    break;
-                case 'x':
-                    e.preventDefault();
-                    showCustomAlert('Cut functionality not implemented.');
-                    break;
                 case 'c':
                     e.preventDefault();
-                    showCustomAlert('Copy functionality not implemented.');
+                    copyObject();
                     break;
                 case 'v':
                     e.preventDefault();
-                    showCustomAlert('Paste functionality not implemented.');
+                    pasteObject();
                     break;
-            }
-        } else {
-            switch (e.key.toLowerCase()) {
-                case 'v': setActiveTool('select'); break;
-                case 'h': setActiveTool('hand'); break;
-                case 'z': setActiveTool('zoom'); break;
-                case 'b': setActiveTool('brush'); break;
-                case 'e': setActiveTool('eraser'); break;
-                case 'i': setActiveTool('color-picker'); break;
-                case 't': setActiveTool('text'); break;
-                case 'c': setActiveTool('crop'); break;
-                case 'delete':
-                case 'backspace':
-                    if (canvas.getActiveObject()) {
-                        canvas.remove(canvas.getActiveObject());
-                        updateUI(null, true);
-                    }
+                case 'x':
+                    e.preventDefault();
+                    cutObject();
+                    break;
+                case 'd':
+                    e.preventDefault();
+                    duplicateObject();
+                    break;
+                case 'a':
+                    e.preventDefault();
+                    selectAll();
+                    break;
+                case 's':
+                    e.preventDefault();
+                    saveProject();
+                    break;
+                case 'n':
+                    e.preventDefault();
+                    newProject();
                     break;
             }
         }
-    }
-
-    // --- CUSTOM ALERT ---
-    function showCustomAlert(message) {
-        const customAlertModal = document.querySelector('.custom-alert-modal');
-        const customAlertMessage = document.getElementById('custom-alert-message');
-        const customAlertOkBtn = document.getElementById('custom-alert-ok-btn');
-
-        customAlertMessage.textContent = message;
-        customAlertModal.style.display = 'flex';
-
-        customAlertOkBtn.onclick = () => {
-            customAlertModal.style.display = 'none';
-        };
-
-        customAlertModal.addEventListener('click', (e) => {
-            if (e.target === customAlertModal) {
-                customAlertModal.style.display = 'none';
-            }
-        });
-    }
-
-    // --- APP MODE (EDIT/GENERATE) ---
-    function setAppMode(mode) {
-        mainLayout.dataset.appMode = mode;
-        if (window.innerWidth > 768) {
-            // For desktop, explicitly manage panel collapse based on app mode
-            if (mode === 'generate') {
-                aiGenerationPanel.classList.remove('collapsed');
-                document.getElementById('layers-container').classList.add('collapsed');
-                document.getElementById('properties-container').classList.add('collapsed');
-
-            } else { // mode === 'edit'
-                aiGenerationPanel.classList.add('collapsed');
-                // Ensure other panels are not collapsed if they were open previously
-                document.getElementById('layers-container').classList.remove('collapsed');
-                document.getElementById('properties-container').classList.remove('collapsed');
-            }
-        }
-    }
-
-    // --- DRAGGABLE PANELS (Desktop only for now) ---
-    function setupDraggablePanels() {
-        interact('.collapsible-panel').draggable({
-            allowFrom: '.panel-header',
-            listeners: {
-                move: dragMoveListener
-            }
-        })
-        .resizable({
-            edges: { left: true, right: true, bottom: true, top: true },
-            listeners: {
-                move: function (event) {
-                    const target = event.target;
-                    let x = parseFloat(target.getAttribute('data-x')) || 0;
-                    let y = parseFloat(target.getAttribute('data-y')) || 0;
-
-                    target.style.width = event.rect.width + 'px';
-                    target.style.height = event.rect.height + 'px';
-
-                    x += event.deltaRect.left;
-                    y += event.deltaRect.top;
-
-                    target.style.transform = `translate(${x}px, ${y}px)`;
-                    target.setAttribute('data-x', x);
-                    target.setAttribute('data-y', y);
+        
+        // Tool shortcuts
+        switch (e.key.toLowerCase()) {
+            case 'v':
+                if (!e.ctrlKey && !e.metaKey) {
+                    selectTool('select');
                 }
-            }
+                break;
+            case 'b':
+                selectTool('brush');
+                break;
+            case 'e':
+                selectTool('eraser');
+                break;
+            case 't':
+                selectTool('text');
+                break;
+            case 'h':
+                selectTool('hand');
+                break;
+            case 'z':
+                if (!e.ctrlKey && !e.metaKey) {
+                    selectTool('zoom');
+                }
+                break;
+            case 'delete':
+            case 'backspace':
+                if (selectedObject) {
+                    deleteObject();
+                }
+                break;
+            case 'escape':
+                deselectAll();
+                break;
+        }
+    });
+}
+
+function selectTool(tool) {
+    // Find and click the tool button
+    const toolBtn = document.querySelector(`[data-tool="${tool}"]`);
+    if (toolBtn) {
+        toolBtn.click();
+    }
+}
+
+// ===== THEME MANAGEMENT =====
+function setupTheme() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+    
+    if (currentTheme === 'light') {
+        document.body.classList.add('light-mode');
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+}
+
+function toggleTheme() {
+    const body = document.body;
+    const themeToggle = document.getElementById('theme-toggle');
+    
+    body.classList.toggle('light-mode');
+    
+    if (body.classList.contains('light-mode')) {
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem('theme', 'light');
+    } else {
+        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+// ===== MOBILE INTERFACE =====
+function setupMobileInterface() {
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle-btn');
+    const mobileMenuOverlay = document.querySelector('.mobile-menu-overlay');
+    const mobileNavContent = document.getElementById('mobile-nav-content');
+    
+    // Copy desktop navigation to mobile
+    const desktopNav = document.getElementById('desktop-nav');
+    if (desktopNav) {
+        mobileNavContent.innerHTML = desktopNav.innerHTML;
+    }
+    
+    // Mobile menu toggle
+    mobileMenuToggle?.addEventListener('click', function() {
+        mobileMenuOverlay.classList.add('open');
+    });
+    
+    // Close mobile menu
+    mobileMenuOverlay.querySelector('.close-btn')?.addEventListener('click', function() {
+        mobileMenuOverlay.classList.remove('open');
+    });
+    
+    // Mobile panel toggles with toggle functionality
+    document.querySelectorAll('.mobile-panel-btn[data-panel-target]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetPanel = this.dataset.panelTarget;
+            toggleMobilePanel(targetPanel, this);
         });
+    });
+    
+    // Mobile export button
+    document.getElementById('mobile-export-btn')?.addEventListener('click', showExportOptions);
+}
 
-        function dragMoveListener(event) {
-            if (window.innerWidth > 768) {
-                const target = event.target;
-                const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-                const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-
-                target.style.transform = `translate(${x}px, ${y}px)`;
-                target.setAttribute('data-x', x);
-                target.setAttribute('data-y', y);
+function toggleMobilePanel(panelTarget, button) {
+    const panel = document.querySelector(`.${panelTarget}`) || document.getElementById(panelTarget);
+    
+    // Check if this panel is currently active
+    const isCurrentlyActive = mobilePanelStates[panelTarget];
+    
+    // Close all panels first
+    Object.keys(mobilePanelStates).forEach(key => {
+        mobilePanelStates[key] = false;
+        const p = document.querySelector(`.${key}`) || document.getElementById(key);
+        if (p) {
+            p.classList.remove('mobile-active');
+        }
+    });
+    
+    // Remove active class from all mobile buttons
+    document.querySelectorAll('.mobile-panel-btn').forEach(b => {
+        b.classList.remove('active');
+    });
+    
+    // If the panel wasn't active, open it
+    if (!isCurrentlyActive && panel) {
+        mobilePanelStates[panelTarget] = true;
+        panel.classList.add('mobile-active');
+        button.classList.add('active');
+        
+        // For right panels, show the specific panel
+        if (panelTarget !== 'tools-panel' && panelTarget !== 'ai-panel') {
+            const rightPanels = document.querySelector('.right-panels');
+            if (rightPanels) {
+                rightPanels.classList.add('mobile-active');
             }
         }
     }
+}
 
-    // --- Desktop Menu System (Dropdowns) ---
-    function setupMenuSystem() {
-        const menuItems = document.querySelectorAll('.top-menu-bar .menu-item');
-
-        menuItems.forEach(item => {
-            const menuLink = item.querySelector('.menu-link');
-            const dropdownMenu = item.querySelector('.dropdown-menu');
-
-            if (menuLink && dropdownMenu) {
-                // Use mouseover/mouseout for smooth hover effect
-                item.addEventListener('mouseover', () => {
-                    if (window.innerWidth > 768) {
-                        item.classList.add('open-dropdown');
-                    }
-                });
-
-                item.addEventListener('mouseout', (e) => {
-                    if (window.innerWidth > 768) {
-                        // Check if the mouse is moving outside the menu item or its dropdown
-                        // This prevents closing if moving from menu item to dropdown
-                        if (!item.contains(e.relatedTarget)) {
-                            item.classList.remove('open-dropdown');
-                        }
-                    }
-                });
-
-                // Click event to toggle for accessibility and if hover fails
-                menuLink.addEventListener('click', (e) => {
-                    e.preventDefault(); // Prevent default link behavior
-                    if (window.innerWidth > 768) {
-                        menuItems.forEach(otherItem => {
-                            if (otherItem !== item) {
-                                otherItem.classList.remove('open-dropdown'); // Close other dropdowns
-                            }
-                        });
-                        item.classList.toggle('open-dropdown');
-                    }
-                });
-            }
+// ===== RIPPLE EFFECTS =====
+function addRippleEffects() {
+    document.querySelectorAll('.primary-btn, .secondary-btn, .tool-btn, .action-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
         });
+    });
+}
 
-        // Close all dropdowns when clicking anywhere outside a menu item
-        document.addEventListener('click', (event) => {
-            if (window.innerWidth > 768) {
-                menuItems.forEach(item => {
-                    if (!item.contains(event.target)) {
-                        item.classList.remove('open-dropdown');
-                    }
-                });
-            }
-        });
-    }
+// ===== HELP FUNCTIONS =====
+function showKeyboardShortcuts() {
+    const shortcuts = `
+        <div style="text-align: left; max-width: 600px;">
+            <h3 style="text-align: center; margin-bottom: 24px;">Keyboard Shortcuts</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div>
+                    <h4 style="color: var(--primary-color); margin-bottom: 12px;">General</h4>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Ctrl+Z</kbd> - Undo</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Ctrl+Y</kbd> - Redo</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Ctrl+S</kbd> - Save Project</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Ctrl+N</kbd> - New Project</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Delete</kbd> - Delete Selected</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Escape</kbd> - Deselect All</p>
+                </div>
+                <div>
+                    <h4 style="color: var(--primary-color); margin-bottom: 12px;">Tools</h4>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">V</kbd> - Select Tool</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">B</kbd> - Brush Tool</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">E</kbd> - Eraser Tool</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">T</kbd> - Text Tool</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">H</kbd> - Hand Tool</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Z</kbd> - Zoom Tool</p>
+                </div>
+                <div>
+                    <h4 style="color: var(--primary-color); margin-bottom: 12px;">Edit</h4>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Ctrl+C</kbd> - Copy</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Ctrl+V</kbd> - Paste</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Ctrl+X</kbd> - Cut</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Ctrl+D</kbd> - Duplicate</p>
+                    <p><kbd style="background: var(--background-light); padding: 2px 6px; border-radius: 4px;">Ctrl+A</kbd> - Select All</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    showAlert(shortcuts);
+}
 
-    // --- INITIALIZE ---
-    initializeCanvas();
-});
+function showDocumentation() {
+    showAlert('Documentation will be available in a future update. Visit our website for more information.');
+}
+
+function showSharePrompt() {
+    const modal = document.getElementById('share-prompt-modal');
+    const promptText = document.getElementById('share-prompt-text');
+    
+    // Generate a sample prompt based on current canvas
+    const prompt = generateCanvasPrompt();
+    promptText.value = prompt;
+    
+    modal.classList.add('active');
+    
+    // Copy to clipboard
+    document.getElementById('copy-prompt-btn').onclick = function() {
+        promptText.select();
+        document.execCommand('copy');
+        showAlert('Prompt copied to clipboard!');
+    };
+    
+    // Download as text
+    document.getElementById('download-prompt-btn').onclick = function() {
+        const blob = new Blob([prompt], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'ai-prompt.txt';
+        link.click();
+    };
+    
+    // Close modal
+    document.getElementById('share-close-btn').onclick = function() {
+        modal.classList.remove('active');
+    };
+}
+
+function generateCanvasPrompt() {
+    const objects = canvas.getObjects();
+    let prompt = 'Create a digital artwork with the following elements:\n\n';
+    
+    objects.forEach((obj, index) => {
+        switch (obj.type) {
+            case 'rect':
+                prompt += `- Rectangle shape with ${obj.fill} fill color\n`;
+                break;
+            case 'circle':
+                prompt += `- Circle shape with ${obj.fill} fill color\n`;
+                break;
+            case 'i-text':
+            case 'text':
+                prompt += `- Text element saying "${obj.text}" in ${obj.fontFamily} font\n`;
+                break;
+            case 'image':
+                prompt += `- Image element positioned at coordinates (${Math.round(obj.left)}, ${Math.round(obj.top)})\n`;
+                break;
+            case 'path':
+                prompt += `- Hand-drawn path or brush stroke\n`;
+                break;
+        }
+    });
+    
+    prompt += `\nCanvas dimensions: ${canvas.width} × ${canvas.height} pixels`;
+    prompt += `\nBackground color: ${canvas.backgroundColor}`;
+    prompt += '\n\nStyle: Professional, clean design with modern aesthetics';
+    
+    return prompt;
+}
+
+function showAbout() {
+    const aboutText = `
+        <div style="text-align: center; max-width: 500px;">
+            <h3 style="color: var(--primary-color); margin-bottom: 16px;">Visual Composer Pro</h3>
+            <p style="margin-bottom: 8px;"><strong>Version 2.0.0</strong></p>
+            <p style="margin-bottom: 24px;">A professional visual design editor with AI generation capabilities.</p>
+            
+            <div style="text-align: left; margin: 24px 0;">
+                <h4 style="color: var(--primary-color); margin-bottom: 12px;">Features:</h4>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li>Advanced drawing and design tools</li>
+                    <li>Layer management system</li>
+                    <li>AI-powered image generation</li>
+                    <li>Professional export options</li>
+                    <li>Responsive mobile interface</li>
+                    <li>Comprehensive keyboard shortcuts</li>
+                    <li>Touch and gesture support</li>
+                    <li>Real-time collaboration ready</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top: 24px; color: var(--text-secondary);">Built with Fabric.js and modern web technologies.</p>
+        </div>
+    `;
+    
+    showAlert(aboutText);
+}
+
+// Initialize the application
+console.log('Visual Composer Pro script loaded successfully');
