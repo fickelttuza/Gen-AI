@@ -7,291 +7,884 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Professional visual design editor with AI generation capabilities">
+    <meta name="keywords" content="visual editor, design tool, canvas editor, AI generation, graphics editor">
 </head>
 <body>
+    <!-- Canvas Size Selection Modal -->
+    <div id="canvas-size-modal" class="modal active">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-drafting-compass"></i>
+                </div>
+                <h2>Create New Project</h2>
+                <p>Choose a canvas size to get started with your design</p>
+            </div>
+            <div class="canvas-templates">
+                <!-- Size Category Tabs -->
+                <div class="size-category-tabs">
+                    <button class="category-tab active" data-category="social">
+                        <i class="fab fa-instagram"></i>
+                        Social Media
+                    </button>
+                    <button class="category-tab" data-category="print">
+                        <i class="fas fa-print"></i>
+                        Print Sizes
+                    </button>
+                    <button class="category-tab" data-category="web">
+                        <i class="fas fa-desktop"></i>
+                        Web & Digital
+                    </button>
+                    <button class="category-tab" data-category="custom">
+                        <i class="fas fa-cog"></i>
+                        Custom
+                    </button>
+                </div>
+
+                <!-- Social Media Templates -->
+                <div class="template-category active" data-category="social">
+                    <div class="template-grid">
+                        <button class="template-btn" data-size="800x600" data-name="Small Canvas">
+                            <div class="template-preview wide"></div>
+                            <div class="template-info">
+                                <h4>Small Canvas</h4>
+                                <span>800 × 600</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1080x1080" data-name="Instagram Post">
+                            <div class="template-preview square"></div>
+                            <div class="template-info">
+                                <h4>Instagram Post</h4>
+                                <span>1080 × 1080</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1080x1920" data-name="Instagram Story">
+                            <div class="template-preview story"></div>
+                            <div class="template-info">
+                                <h4>Instagram Story</h4>
+                                <span>1080 × 1920</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1200x630" data-name="Facebook Cover">
+                            <div class="template-preview wide"></div>
+                            <div class="template-info">
+                                <h4>Facebook Cover</h4>
+                                <span>1200 × 630</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1200x675" data-name="Facebook Post">
+                            <div class="template-preview wide"></div>
+                            <div class="template-info">
+                                <h4>Facebook Post</h4>
+                                <span>1200 × 675</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1024x512" data-name="Twitter Header">
+                            <div class="template-preview wide"></div>
+                            <div class="template-info">
+                                <h4>Twitter Header</h4>
+                                <span>1024 × 512</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1280x720" data-name="YouTube Thumbnail">
+                            <div class="template-preview video"></div>
+                            <div class="template-info">
+                                <h4>YouTube Thumbnail</h4>
+                                <span>1280 × 720</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1000x1500" data-name="Pinterest Pin">
+                            <div class="template-preview tall"></div>
+                            <div class="template-info">
+                                <h4>Pinterest Pin</h4>
+                                <span>1000 × 1500</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1080x566" data-name="LinkedIn Post">
+                            <div class="template-preview wide"></div>
+                            <div class="template-info">
+                                <h4>LinkedIn Post</h4>
+                                <span>1080 × 566</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Print Size Templates -->
+                <div class="template-category" data-category="print">
+                    <div class="template-grid">
+                        <button class="template-btn" data-size="1800x1200" data-name="4×6 Photo">
+                            <div class="template-preview photo"></div>
+                            <div class="template-info">
+                                <h4>4×6 Photo</h4>
+                                <span>1800 × 1200 (300 DPI)</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="2100x1500" data-name="5×7 Photo">
+                            <div class="template-preview photo"></div>
+                            <div class="template-info">
+                                <h4>5×7 Photo</h4>
+                                <span>2100 × 1500 (300 DPI)</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="2400x3000" data-name="8×10 Photo">
+                            <div class="template-preview portrait"></div>
+                            <div class="template-info">
+                                <h4>8×10 Photo</h4>
+                                <span>2400 × 3000 (300 DPI)</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="3300x4200" data-name="11×14 Photo">
+                            <div class="template-preview portrait"></div>
+                            <div class="template-info">
+                                <h4>11×14 Photo</h4>
+                                <span>3300 × 4200 (300 DPI)</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="2550x3300" data-name="Letter (8.5×11)">
+                            <div class="template-preview document"></div>
+                            <div class="template-info">
+                                <h4>Letter Size</h4>
+                                <span>2550 × 3300 (300 DPI)</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="2480x3508" data-name="A4 Document">
+                            <div class="template-preview document"></div>
+                            <div class="template-info">
+                                <h4>A4 Document</h4>
+                                <span>2480 × 3508 (300 DPI)</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="3508x4961" data-name="A3 Document">
+                            <div class="template-preview document"></div>
+                            <div class="template-info">
+                                <h4>A3 Document</h4>
+                                <span>3508 × 4961 (300 DPI)</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1050x1500" data-name="Business Card">
+                            <div class="template-preview card"></div>
+                            <div class="template-info">
+                                <h4>Business Card</h4>
+                                <span>1050 × 1500 (300 DPI)</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1275x1875" data-name="Postcard">
+                            <div class="template-preview card"></div>
+                            <div class="template-info">
+                                <h4>Postcard</h4>
+                                <span>1275 × 1875 (300 DPI)</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Web & Digital Templates -->
+                <div class="template-category" data-category="web">
+                    <div class="template-grid">
+                        <button class="template-btn" data-size="1920x1080" data-name="Desktop Wallpaper">
+                            <div class="template-preview desktop"></div>
+                            <div class="template-info">
+                                <h4>Desktop Wallpaper</h4>
+                                <span>1920 × 1080</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="2560x1440" data-name="2K Wallpaper">
+                            <div class="template-preview desktop"></div>
+                            <div class="template-info">
+                                <h4>2K Wallpaper</h4>
+                                <span>2560 × 1440</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="3840x2160" data-name="4K Wallpaper">
+                            <div class="template-preview desktop"></div>
+                            <div class="template-info">
+                                <h4>4K Wallpaper</h4>
+                                <span>3840 × 2160</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="375x812" data-name="Mobile Portrait">
+                            <div class="template-preview mobile"></div>
+                            <div class="template-info">
+                                <h4>Mobile Portrait</h4>
+                                <span>375 × 812</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="768x1024" data-name="Tablet Portrait">
+                            <div class="template-preview tablet"></div>
+                            <div class="template-info">
+                                <h4>Tablet Portrait</h4>
+                                <span>768 × 1024</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1200x800" data-name="Web Banner">
+                            <div class="template-preview wide"></div>
+                            <div class="template-info">
+                                <h4>Web Banner</h4>
+                                <span>1200 × 800</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="1024x1024" data-name="Square Canvas">
+                            <div class="template-preview square"></div>
+                            <div class="template-info">
+                                <h4>Square Canvas</h4>
+                                <span>1024 × 1024</span>
+                            </div>
+                        </button>
+                        <button class="template-btn" data-size="800x600" data-name="Presentation Slide">
+                            <div class="template-preview wide"></div>
+                            <div class="template-info">
+                                <h4>Presentation Slide</h4>
+                                <span>800 × 600</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Size Templates -->
+                <div class="template-category" data-category="custom">
+                    <div class="template-grid">
+                        <button class="template-btn custom" data-size="custom" data-name="Custom Size">
+                            <div class="template-preview custom-preview">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="template-info">
+                                <h4>Custom Size</h4>
+                                <span>Define your own</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="custom-size-inputs" id="custom-size-inputs">
+                        <div class="input-group">
+                            <label>Width (px)</label>
+                            <input type="number" id="custom-width" value="800" min="100" max="8000">
+                        </div>
+                        <div class="input-group">
+                            <label>Height (px)</label>
+                            <input type="number" id="custom-height" value="600" min="100" max="8000">
+                        </div>
+                        <div class="input-group">
+                            <label>DPI/Resolution</label>
+                            <select id="custom-dpi">
+                                <option value="72">72 DPI (Web)</option>
+                                <option value="150">150 DPI (Draft Print)</option>
+                                <option value="300">300 DPI (High Quality Print)</option>
+                                <option value="600">600 DPI (Professional Print)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Units</label>
+                            <select id="custom-units">
+                                <option value="px">Pixels</option>
+                                <option value="in">Inches</option>
+                                <option value="cm">Centimeters</option>
+                                <option value="mm">Millimeters</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="create-canvas-btn" class="primary-btn" disabled>
+                        <i class="fas fa-plus"></i>
+                        Create Canvas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Layout -->
     <div class="main-layout" data-app-mode="edit">
+        <!-- Header with Menu Bar -->
         <header class="top-menu-bar">
-            <div class="logo"><i class="fas fa-drafting-compass"></i> Visual Composer</div>
+            <div class="logo">
+                <i class="fas fa-drafting-compass"></i>
+                <span>Visual Composer Pro</span>
+            </div>
+            
+            <!-- Desktop Navigation -->
             <nav id="desktop-nav">
                 <div class="menu-item" id="file-menu">
                     <a href="#" class="menu-link">File</a>
                     <div class="dropdown-menu">
-                        <a href="#" id="new-project">New Project</a>
-                        <a href="#" id="open-image">Open Image</a>
-                        <a href="#" id="save-project">Save Project</a>
-                        <a href="#" id="export-png">Export as PNG</a>
+                        <a href="#" id="new-project"><i class="fas fa-file"></i> New Project</a>
+                        <a href="#" id="open-image"><i class="fas fa-folder-open"></i> Open Image</a>
+                        <a href="#" id="save-project"><i class="fas fa-save"></i> Save Project</a>
+                        <hr>
+                        <a href="#" id="export-png"><i class="fas fa-download"></i> Export as PNG</a>
+                        <a href="#" id="export-jpg"><i class="fas fa-download"></i> Export as JPG</a>
+                        <a href="#" id="export-svg"><i class="fas fa-download"></i> Export as SVG</a>
                     </div>
                 </div>
                 <div class="menu-item" id="edit-menu">
                     <a href="#" class="menu-link">Edit</a>
                     <div class="dropdown-menu">
-                        <a href="#" id="undo-action">Undo</a>
-                        <a href="#" id="redo-action">Redo</a>
-                        <a href="#" id="cut-object">Cut</a>
-                        <a href="#" id="copy-object">Copy</a>
-                        <a href="#" id="paste-object">Paste</a>
+                        <a href="#" id="undo-action"><i class="fas fa-undo"></i> Undo</a>
+                        <a href="#" id="redo-action"><i class="fas fa-redo"></i> Redo</a>
+                        <hr>
+                        <a href="#" id="cut-object"><i class="fas fa-cut"></i> Cut</a>
+                        <a href="#" id="copy-object"><i class="fas fa-copy"></i> Copy</a>
+                        <a href="#" id="paste-object"><i class="fas fa-paste"></i> Paste</a>
+                        <a href="#" id="duplicate-object"><i class="fas fa-clone"></i> Duplicate</a>
+                        <hr>
+                        <a href="#" id="delete-object"><i class="fas fa-trash"></i> Delete</a>
                     </div>
                 </div>
                 <div class="menu-item" id="image-menu">
                     <a href="#" class="menu-link">Image</a>
                     <div class="dropdown-menu">
-                        <a href="#" id="crop-image">Crop Image</a>
-                        <a href="#" id="resize-image">Resize Canvas</a>
-                        <a href="#" id="rotate-image">Rotate</a>
+                        <a href="#" id="crop-image"><i class="fas fa-crop"></i> Crop Image</a>
+                        <a href="#" id="resize-canvas"><i class="fas fa-expand-arrows-alt"></i> Resize Canvas</a>
+                        <a href="#" id="rotate-image"><i class="fas fa-redo"></i> Rotate</a>
+                        <hr>
+                        <a href="#" id="flip-horizontal"><i class="fas fa-arrows-alt-h"></i> Flip Horizontal</a>
+                        <a href="#" id="flip-vertical"><i class="fas fa-arrows-alt-v"></i> Flip Vertical</a>
                     </div>
                 </div>
                 <div class="menu-item" id="layer-menu">
                     <a href="#" class="menu-link">Layer</a>
                     <div class="dropdown-menu">
-                        <a href="#" id="add-layer">Add New Layer</a>
-                        <a href="#" id="delete-layer">Delete Layer</a>
-                        <a href="#" id="merge-layers">Merge Layers</a>
+                        <a href="#" id="add-layer"><i class="fas fa-plus"></i> Add New Layer</a>
+                        <a href="#" id="delete-layer"><i class="fas fa-trash"></i> Delete Layer</a>
+                        <a href="#" id="duplicate-layer"><i class="fas fa-clone"></i> Duplicate Layer</a>
+                        <hr>
+                        <a href="#" id="move-layer-up"><i class="fas fa-arrow-up"></i> Move Up</a>
+                        <a href="#" id="move-layer-down"><i class="fas fa-arrow-down"></i> Move Down</a>
+                        <hr>
+                        <a href="#" id="merge-layers"><i class="fas fa-compress-arrows-alt"></i> Merge Layers</a>
+                        <a href="#" id="flatten-image"><i class="fas fa-layer-group"></i> Flatten Image</a>
                     </div>
                 </div>
                 <div class="menu-item" id="select-menu">
                     <a href="#" class="menu-link">Select</a>
                     <div class="dropdown-menu">
-                        <a href="#" id="select-all">Select All</a>
-                        <a href="#" id="deselect">Deselect</a>
-                        <a href="#" id="invert-selection">Invert Selection</a>
+                        <a href="#" id="select-all"><i class="fas fa-border-all"></i> Select All</a>
+                        <a href="#" id="deselect"><i class="fas fa-times"></i> Deselect</a>
+                        <a href="#" id="invert-selection"><i class="fas fa-exchange-alt"></i> Invert Selection</a>
+                    </div>
+                </div>
+                <div class="menu-item" id="effects-menu">
+                    <a href="#" class="menu-link">Effects</a>
+                    <div class="dropdown-menu">
+                        <a href="#" id="blur-effect"><i class="fas fa-eye-slash"></i> Blur</a>
+                        <a href="#" id="sharpen-effect"><i class="fas fa-eye"></i> Sharpen</a>
+                        <a href="#" id="brightness-effect"><i class="fas fa-sun"></i> Brightness</a>
+                        <a href="#" id="contrast-effect"><i class="fas fa-adjust"></i> Contrast</a>
+                        <hr>
+                        <a href="#" id="grayscale-effect"><i class="fas fa-palette"></i> Grayscale</a>
+                        <a href="#" id="sepia-effect"><i class="fas fa-tint"></i> Sepia</a>
+                        <a href="#" id="invert-effect"><i class="fas fa-exchange-alt"></i> Invert Colors</a>
                     </div>
                 </div>
                 <div class="menu-item" id="view-menu">
                     <a href="#" class="menu-link">View</a>
                     <div class="dropdown-menu">
-                        <a href="#" id="zoom-in">Zoom In</a>
-                        <a href="#" id="zoom-out">Zoom Out</a>
-                        <a href="#" id="reset-view">Reset View</a>
+                        <a href="#" id="zoom-in"><i class="fas fa-search-plus"></i> Zoom In</a>
+                        <a href="#" id="zoom-out"><i class="fas fa-search-minus"></i> Zoom Out</a>
+                        <a href="#" id="zoom-fit"><i class="fas fa-expand"></i> Fit to Screen</a>
+                        <a href="#" id="zoom-100"><i class="fas fa-search"></i> 100%</a>
+                        <hr>
+                        <a href="#" id="toggle-grid"><i class="fas fa-th"></i> Toggle Grid</a>
+                        <a href="#" id="toggle-rulers"><i class="fas fa-ruler"></i> Toggle Rulers</a>
                     </div>
                 </div>
                 <div class="menu-item" id="help-menu">
                     <a href="#" class="menu-link">Help</a>
                     <div class="dropdown-menu">
-                        <a href="#" id="documentation">Documentation</a>
-                        <a href="#" id="keyboard-shortcuts">Keyboard Shortcuts</a>
-                        <a href="#" id="about">About</a>
+                        <a href="#" id="keyboard-shortcuts"><i class="fas fa-keyboard"></i> Keyboard Shortcuts</a>
+                        <a href="#" id="documentation"><i class="fas fa-book"></i> Documentation</a>
+                        <a href="#" id="share-prompt"><i class="fas fa-share"></i> Share Prompt</a>
+                        <hr>
+                        <a href="#" id="about"><i class="fas fa-info-circle"></i> About</a>
                     </div>
                 </div>
             </nav>
+
+            <!-- Header Actions -->
             <div class="user-actions">
-                <button title="Undo" id="undo-btn" class="action-btn"><i class="fas fa-undo"></i></button>
-                <button title="Redo" id="redo-btn" class="action-btn"><i class="fas fa-redo"></i></button>
-                <button title="Toggle Mode" id="mobile-menu-toggle-btn" class="action-btn mobile-only">
+                <button title="AI Generate" id="ai-toggle-btn" class="action-btn ai-btn">
+                    <i class="fas fa-magic"></i>
+                </button>
+                <button title="Undo" id="undo-btn" class="action-btn">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button title="Redo" id="redo-btn" class="action-btn">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button title="Toggle Theme" id="theme-toggle" class="action-btn">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button title="Menu" id="mobile-menu-toggle-btn" class="action-btn mobile-only">
                     <i class="fas fa-bars"></i>
                 </button>
-                <button title="Toggle Theme" id="theme-toggle" class="action-btn"><i class="fas fa-moon"></i></button>
             </div>
         </header>
 
-        <aside class="tools-panel">
-            <button class="tool-btn active" data-tool="select" title="Select Tool (V)"><i class="fas fa-mouse-pointer"></i></button>
-            <button class="tool-btn" data-tool="hand" title="Hand Tool (H)"><i class="fas fa-hand-paper"></i></button>
-            <button class="tool-btn" data-tool="zoom" title="Zoom Tool (Z)"><i class="fas fa-search"></i></button>
-            <hr>
-            <button class="tool-btn" data-tool="brush" title="Brush Tool (B)"><i class="fas fa-paint-brush"></i></button>
-            <button class="tool-btn" data-tool="eraser" title="Eraser Tool (E)"><i class="fas fa-eraser"></i></button>
-            <button class="tool-btn" data-tool="color-picker" title="Color Picker (I)"><i class="fas fa-eye-dropper"></i></button>
-            <hr>
-            <button class="tool-btn" data-tool="text" title="Text Tool (T)"><i class="fas fa-font"></i></button>
-            <button class="tool-btn" data-tool="shape" data-shape="rect" title="Rectangle Tool (R)"><i class="fas fa-square"></i></button>
-            <button class="tool-btn" data-tool="shape" data-shape="circle" title="Circle Tool (U)"><i class="fas fa-circle"></i></button>
-            <button class="tool-btn" data-tool="shape" data-shape="line" title="Line Tool (L)"><i class="fas fa-minus"></i></button>
-            <hr>
-            <button class="tool-btn" data-tool="crop" title="Crop Tool (C)"><i class="fas fa-crop-alt"></i></button>
-            <hr>
-            <input type="file" id="image-upload" hidden accept="image/*">
-            <button class="tool-btn" id="image-upload-btn" title="Upload Image"><i class="fas fa-upload"></i></button>
+        <!-- AI Generation Panel (Collapsible) -->
+        <aside class="ai-panel" id="ai-panel">
+            <div class="ai-panel-header">
+                <h3><i class="fas fa-magic"></i> AI Generation</h3>
+                <button class="ai-close-btn" id="ai-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="ai-panel-content">
+                <div class="prop-group">
+                    <label>Model</label>
+                    <select id="ai-model">
+                        <option value="imagen-3.0">Google Imagen 3.0</option>
+                        <option value="imagen-2.0">Google Imagen 2.0</option>
+                        <option value="dalle-3">DALL-E 3</option>
+                        <option value="midjourney">Midjourney</option>
+                    </select>
+                </div>
+                <div class="prop-group">
+                    <label>Style Preset</label>
+                    <select id="ai-style-preset">
+                        <option value="none">None</option>
+                        <option value="photorealistic">Photorealistic</option>
+                        <option value="anime">Anime</option>
+                        <option value="digital-art">Digital Art</option>
+                        <option value="sketch">Sketch</option>
+                        <option value="oil-painting">Oil Painting</option>
+                        <option value="watercolor">Watercolor</option>
+                        <option value="minimalist">Minimalist</option>
+                    </select>
+                </div>
+                <div class="prop-group">
+                    <label for="ai-prompt">Prompt</label>
+                    <textarea id="ai-prompt" rows="3" placeholder="Describe the image you want to generate..."></textarea>
+                </div>
+                <div class="prop-group">
+                    <label for="ai-negative-prompt">Negative Prompt</label>
+                    <textarea id="ai-negative-prompt" rows="2" placeholder="What to avoid in the image..."></textarea>
+                </div>
+                <div class="prop-grid">
+                    <div class="prop-group">
+                        <label>Aspect Ratio</label>
+                        <select id="ai-aspect-ratio">
+                            <option value="1:1">1:1 Square</option>
+                            <option value="16:9">16:9 Landscape</option>
+                            <option value="9:16">9:16 Portrait</option>
+                            <option value="4:3">4:3 Classic</option>
+                            <option value="3:2">3:2 Photo</option>
+                        </select>
+                    </div>
+                    <div class="prop-group">
+                        <label>Quality</label>
+                        <select id="ai-quality">
+                            <option value="standard">Standard</option>
+                            <option value="high">High</option>
+                            <option value="ultra">Ultra</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="prop-group">
+                    <label>Blur Intensity: <span id="blur-value">0</span></label>
+                    <input type="range" id="ai-blur" min="0" max="10" value="0">
+                </div>
+                <button class="primary-btn" id="generate-ai-image-btn">
+                    <i class="fas fa-magic"></i>
+                    Generate Image
+                </button>
+                <div class="ai-result" id="ai-result" style="display: none;">
+                    <img id="ai-generated-image" alt="Generated Image">
+                    <div class="ai-result-actions">
+                        <button class="secondary-btn" id="regenerate-btn">
+                            <i class="fas fa-redo"></i>
+                            Regenerate
+                        </button>
+                        <button class="primary-btn" id="add-to-canvas-btn">
+                            <i class="fas fa-plus"></i>
+                            Add to Canvas
+                        </button>
+                    </div>
+                </div>
+            </div>
         </aside>
 
+        <!-- Tools Panel (Left Sidebar) -->
+        <aside class="tools-panel">
+            <!-- Selection Tools -->
+            <div class="tool-group">
+                <button class="tool-btn active" data-tool="select" title="Select Tool (V)">
+                    <i class="fas fa-mouse-pointer"></i>
+                </button>
+                <button class="tool-btn" data-tool="marquee" title="Marquee Selection (M)">
+                    <i class="fas fa-vector-square"></i>
+                </button>
+                <button class="tool-btn" data-tool="lasso" title="Lasso Tool (L)">
+                    <i class="fas fa-lasso"></i>
+                </button>
+                <button class="tool-btn" data-tool="magic-wand" title="Magic Wand (W)">
+                    <i class="fas fa-magic"></i>
+                </button>
+            </div>
+
+            <hr>
+
+            <!-- Navigation Tools -->
+            <div class="tool-group">
+                <button class="tool-btn" data-tool="hand" title="Hand Tool (H)">
+                    <i class="fas fa-hand-paper"></i>
+                </button>
+                <button class="tool-btn" data-tool="zoom" title="Zoom Tool (Z)">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+
+            <hr>
+
+            <!-- Drawing Tools -->
+            <div class="tool-group">
+                <button class="tool-btn" data-tool="brush" title="Brush Tool (B)">
+                    <i class="fas fa-paint-brush"></i>
+                </button>
+                <button class="tool-btn" data-tool="eraser" title="Eraser Tool (E)">
+                    <i class="fas fa-eraser"></i>
+                </button>
+                <button class="tool-btn" data-tool="clone-stamp" title="Clone Stamp (S)">
+                    <i class="fas fa-stamp"></i>
+                </button>
+                <button class="tool-btn" data-tool="color-picker" title="Color Picker (I)">
+                    <i class="fas fa-eye-dropper"></i>
+                </button>
+                <button class="tool-btn" data-tool="fill-bucket" title="Fill Bucket (G)">
+                    <i class="fas fa-fill-drip"></i>
+                </button>
+                <button class="tool-btn" data-tool="gradient" title="Gradient Tool (R)">
+                    <i class="fas fa-gradient"></i>
+                </button>
+            </div>
+
+            <hr>
+
+            <!-- Enhancement Tools -->
+            <div class="tool-group">
+                <button class="tool-btn" data-tool="dodge" title="Dodge Tool (O)">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button class="tool-btn" data-tool="burn" title="Burn Tool (U)">
+                    <i class="fas fa-fire"></i>
+                </button>
+                <button class="tool-btn" data-tool="sponge" title="Sponge Tool (P)">
+                    <i class="fas fa-sponge"></i>
+                </button>
+                <button class="tool-btn" data-tool="history-brush" title="History Brush (Y)">
+                    <i class="fas fa-history"></i>
+                </button>
+            </div>
+
+            <hr>
+
+            <!-- Shape & Text Tools -->
+            <div class="tool-group">
+                <button class="tool-btn" data-tool="text" title="Text Tool (T)">
+                    <i class="fas fa-font"></i>
+                </button>
+                <button class="tool-btn" data-tool="pen" title="Pen Tool (P)">
+                    <i class="fas fa-pen-nib"></i>
+                </button>
+                <button class="tool-btn" data-tool="path-select" title="Path Selection (A)">
+                    <i class="fas fa-bezier-curve"></i>
+                </button>
+            </div>
+
+            <hr>
+
+            <!-- Shape Tools -->
+            <div class="tool-group">
+                <button class="tool-btn" data-tool="shape" data-shape="rect" title="Rectangle (R)">
+                    <i class="fas fa-square"></i>
+                </button>
+                <button class="tool-btn" data-tool="shape" data-shape="circle" title="Circle (C)">
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button class="tool-btn" data-tool="shape" data-shape="line" title="Line (L)">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="tool-btn" data-tool="shape" data-shape="polygon" title="Polygon">
+                    <i class="fas fa-draw-polygon"></i>
+                </button>
+            </div>
+
+            <hr>
+
+            <!-- Utility Tools -->
+            <div class="tool-group">
+                <button class="tool-btn" data-tool="crop" title="Crop Tool (C)">
+                    <i class="fas fa-crop-alt"></i>
+                </button>
+                <input type="file" id="image-upload" hidden accept="image/*">
+                <button class="tool-btn" id="image-upload-btn" title="Upload Image">
+                    <i class="fas fa-upload"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Canvas Area -->
         <main class="canvas-area">
+            <div class="canvas-toolbar">
+                <div class="canvas-info">
+                    <span id="canvas-name">New Canvas</span>
+                    <span id="canvas-dimensions">800 × 600</span>
+                </div>
+                <div class="canvas-actions">
+                    <button class="canvas-btn" id="grid-toggle" title="Toggle Grid">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button class="canvas-btn" id="rulers-toggle" title="Toggle Rulers">
+                        <i class="fas fa-ruler"></i>
+                    </button>
+                    <button class="canvas-btn" id="fit-to-screen" title="Fit to Screen">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
             <div class="canvas-container" id="canvas-container">
-                <canvas id="main-canvas"></canvas>
+                <canvas id="main-canvas" width="800" height="600"></canvas>
+                <div class="canvas-grid" id="canvas-grid"></div>
+                <div class="canvas-rulers" id="canvas-rulers">
+                    <div class="ruler-horizontal"></div>
+                    <div class="ruler-vertical"></div>
+                </div>
             </div>
             <div id="crop-actions" class="crop-actions-container">
-                <button id="apply-crop-btn">Apply Crop</button>
-                <button id="cancel-crop-btn">Cancel</button>
+                <button id="apply-crop-btn" class="primary-btn">Apply Crop</button>
+                <button id="cancel-crop-btn" class="secondary-btn">Cancel</button>
             </div>
         </main>
 
+        <!-- Right Panels -->
         <aside class="right-panels">
+            <!-- Layers Panel -->
             <div class="panel collapsible-panel" id="layers-container">
                 <div class="panel-header collapsible-header">
-                    <h3 class="panel-title"><i class="fas fa-layer-group"></i> Layers</h3>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
+                    <h3 class="panel-title">
+                        <i class="fas fa-layer-group"></i>
+                        Layers
+                    </h3>
+                    <div class="panel-actions">
+                        <button class="panel-btn" id="add-new-layer-btn" title="Add Layer">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
                 </div>
                 <div class="panel-content collapsible-content">
-                    <button class="primary-btn" id="add-new-layer-btn" style="margin-bottom: 0.75rem;"><i class="fas fa-plus"></i> Add New Layer</button>
+                    <div class="layer-controls">
+                        <button class="layer-control-btn" id="move-layer-up-btn" title="Move Up">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button class="layer-control-btn" id="move-layer-down-btn" title="Move Down">
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button class="layer-control-btn" id="duplicate-layer-btn" title="Duplicate">
+                            <i class="fas fa-clone"></i>
+                        </button>
+                        <button class="layer-control-btn" id="delete-layer-btn" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                     <ul class="layers-list" id="layers-list"></ul>
                 </div>
             </div>
 
+            <!-- Properties Panel -->
             <div class="panel collapsible-panel" id="properties-container">
                 <div class="panel-header collapsible-header">
-                    <h3 class="panel-title"><i class="fas fa-sliders-h"></i> Properties</h3>
+                    <h3 class="panel-title">
+                        <i class="fas fa-sliders-h"></i>
+                        Properties
+                    </h3>
                     <i class="fas fa-chevron-down toggle-icon"></i>
                 </div>
                 <div class="panel-content collapsible-content" id="properties-panel-content"></div>
                 <div id="properties-panel-placeholder">
-                    <i class="fas fa-info-circle fa-2x"></i>
-                    <p>Select an object or tool to see its properties here.</p>
+                    <i class="fas fa-info-circle"></i>
+                    <p>Select an object to see its properties</p>
                 </div>
             </div>
 
-            <div class="panel collapsible-panel" id="ai-generation-panel">
+            <!-- Color Picker Panel -->
+            <div class="panel collapsible-panel" id="color-picker-container">
                 <div class="panel-header collapsible-header">
-                    <h3 class="panel-title"><i class="fas fa-magic"></i> AI Generation</h3>
-                    <span class="tokens-info">500 Tokens Left</span>
+                    <h3 class="panel-title">
+                        <i class="fas fa-palette"></i>
+                        Colors
+                    </h3>
                     <i class="fas fa-chevron-down toggle-icon"></i>
                 </div>
                 <div class="panel-content collapsible-content">
-                    <div class="prop-group">
-                        <label>Model</label>
-                        <select id="ai-model">
-                            <option value="imagen-3.0-generate-002">Google Imagen 3.0</option>
-                            <option value="imagen-2.0-generate-001">Google Imagen 2.0</option>
-                        </select>
+                    <div class="color-picker-main">
+                        <div class="color-preview">
+                            <div class="color-current" id="color-current"></div>
+                            <div class="color-previous" id="color-previous"></div>
+                        </div>
+                        <input type="color" id="color-picker" value="#800080">
                     </div>
-                    <div class="prop-group">
-                        <label>Style Presets</label>
-                        <select id="ai-style-preset">
-                            <option value="none">None</option>
-                            <option value="photorealistic">Photorealistic</option>
-                            <option value="anime">Anime</option>
-                            <option value="digital art">Digital Art</option>
-                            <option value="sketch">Sketch</option>
-                            <option value="oil painting">Oil Painting</option>
-                        </select>
+                    <div class="color-swatches">
+                        <h4>Recent Colors</h4>
+                        <div class="swatch-grid" id="recent-colors"></div>
                     </div>
-                    <div class="prop-group">
-                        <label>Aspect Ratio</label>
-                        <select id="ai-aspect-ratio">
-                            <option value="1:1">1:1</option>
-                            <option value="16:9">16:9</option>
-                            <option value="9:16">9:16</option>
-                            <option value="3:2">3:2</option>
-                        </select>
+                    <div class="color-presets">
+                        <h4>Color Presets</h4>
+                        <div class="swatch-grid">
+                            <div class="color-swatch" data-color="#800080" style="background: #800080;"></div>
+                            <div class="color-swatch" data-color="#9932cc" style="background: #9932cc;"></div>
+                            <div class="color-swatch" data-color="#ba55d3" style="background: #ba55d3;"></div>
+                            <div class="color-swatch" data-color="#da70d6" style="background: #da70d6;"></div>
+                            <div class="color-swatch" data-color="#ee82ee" style="background: #ee82ee;"></div>
+                            <div class="color-swatch" data-color="#dda0dd" style="background: #dda0dd;"></div>
+                            <div class="color-swatch" data-color="#e6e6fa" style="background: #e6e6fa;"></div>
+                            <div class="color-swatch" data-color="#f8f8ff" style="background: #f8f8ff;"></div>
+                        </div>
                     </div>
-                    <div class="prop-group">
-                        <label for="ai-prompt">Prompt</label>
-                        <textarea id="ai-prompt" rows="4" placeholder="Describe the image you want to generate..."></textarea>
-                    </div>
-                    <div class="prop-group">
-                        <label for="ai-negative-prompt">Negative Prompt (Optional)</label>
-                        <textarea id="ai-negative-prompt" rows="2" placeholder="Elements to exclude..."></textarea>
-                    </div>
-                    <div class="prop-group">
-                        <label for="ai-inpainting-prompt">Inpainting Prompt (Optional)</label>
-                        <textarea id="ai-inpainting-prompt" rows="2" placeholder="What to fill into the selected area? (Requires selection on canvas)"></textarea>
-                        <small>Use with an active selection on the canvas. Note: Requires a compatible AI model.</small>
-                    </div>
-                    <div class="prop-group">
-                        <label for="ai-outpainting-prompt">Outpainting Prompt (Optional)</label>
-                        <textarea id="ai-outpainting-prompt" rows="2" placeholder="How to extend the image?"></textarea>
-                        <small>Extend canvas and describe how to fill new areas. Note: Requires a compatible AI model.</small>
-                    </div>
-                    <div class="prop-group">
-                        <label>Number of Images</label>
-                        <input type="number" id="ai-num-images" value="1" min="1" max="4">
-                    </div>
-                    <div class="prop-group">
-                        <label>Sampling Method</label>
-                        <select id="ai-sampling-method">
-                            <option value="euler-a">Euler A</option>
-                            <option value="dpm++-2m">DPM++ 2M</option>
-                            <option value="k-lms">K-LMS</option>
-                        </select>
-                    </div>
-                    <div class="prop-group">
-                        <label>Sampling Steps: <span id="sampling-steps-value">20</span></label>
-                        <input type="range" id="ai-sampling-steps" min="10" max="100" value="20">
-                    </div>
-                    <div class="prop-group">
-                        <label>Guidance Scale: <span id="guidance-scale-value">7</span></label>
-                        <input type="range" id="ai-guidance-scale" min="1" max="20" step="0.5" value="7">
-                    </div>
-                    <div class="prop-group">
-                        <label for="ai-seed">Seed (Optional)</label>
-                        <input type="text" id="ai-seed" placeholder="Leave blank for random">
-                    </div>
-                    <div class="prop-group">
-                        <label>Image to Image</label>
-                        <input type="file" id="ai-image-to-image-upload" accept="image/*">
-                        <small>Upload an image to use as a base for generation.</small>
-                        <img id="ai-img2img-preview" src="" alt="Image to Image Preview" style="max-width:100%; display:none; margin-top:10px;">
-                    </div>
-                    <input type="hidden" id="ai-img2img-base64-data">
-                    <div class="prop-group">
-                        <label>ControlNet (Coming Soon)</label>
-                        <small>Advanced control over image generation based on input image features (e.g., pose, depth).</small>
-                    </div>
-                    <button class="primary-btn" id="generate-ai-image-btn"><i class="fas fa-magic"></i> Generate Image</button>
-                    <button class="primary-btn hidden" id="send-to-edit-btn" style="margin-top:0.75rem;"><i class="fas fa-paint-brush"></i> Send to Canvas for Editing</button>
+                </div>
+            </div>
+
+            <!-- History Panel -->
+            <div class="panel collapsible-panel" id="history-container">
+                <div class="panel-header collapsible-header">
+                    <h3 class="panel-title">
+                        <i class="fas fa-history"></i>
+                        History
+                    </h3>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="panel-content collapsible-content">
+                    <div class="history-list" id="history-list"></div>
                 </div>
             </div>
         </aside>
 
+        <!-- Footer -->
         <footer class="bottom-bar">
             <div class="canvas-size-selector">
-                <label for="canvas-size">Canvas Preset:</label>
+                <label for="canvas-size">Canvas:</label>
                 <select id="canvas-size">
-                    <option value="1080x1080" selected>Instagram Post (1080x1080)</option>
-                    <option value="1280x720">HD Video (1280x720)</option>
-                    <option value="1920x1080">Full HD (1920x1080)</option>
-                    <option value="1000x1500">Pinterest Pin (1000x1500)</option>
+                    <option value="800x600" selected>Small Canvas (800×600)</option>
+                    <option value="1080x1080">Instagram Post (1080×1080)</option>
+                    <option value="1280x720">HD Video (1280×720)</option>
+                    <option value="1920x1080">Full HD (1920×1080)</option>
+                    <option value="1000x1500">Pinterest Pin (1000×1500)</option>
                 </select>
             </div>
             <div id="zoom-controls">
-                <i class="fas fa-search-minus"></i>
-                <input type="range" id="zoom-slider" min="10" max="400" value="100">
-                <i class="fas fa-search-plus"></i>
+                <button class="zoom-btn" id="zoom-out-btn">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <input type="range" id="zoom-slider" min="10" max="300" value="100">
+                <button class="zoom-btn" id="zoom-in-btn">
+                    <i class="fas fa-search-plus"></i>
+                </button>
                 <span id="zoom-level">100%</span>
             </div>
             <div class="action-buttons">
-                <button id="export-btn" class="primary-btn"><i class="fas fa-download"></i> Export as PNG</button>
+                <button id="export-btn" class="primary-btn">
+                    <i class="fas fa-download"></i>
+                    Export
+                </button>
             </div>
         </footer>
 
-        <div id="custom-alert-modal" class="custom-alert-modal">
-            <div class="custom-alert-content">
-                <p id="custom-alert-message"></p>
-                <button id="custom-alert-ok-btn">OK</button>
-            </div>
-        </div>
-
-        <div class="mobile-menu-overlay">
-            <button class="close-btn"><i class="fas fa-times"></i></button>
-            <nav id="mobile-nav-content">
-                </nav>
-        </div>
-
+        <!-- Mobile Bottom Bar -->
         <div class="mobile-bottom-bar">
-            <button id="toggle-tools-panel-btn" data-panel-target="tools-panel" class="active">
+            <button id="toggle-tools-panel-btn" data-panel-target="tools-panel" class="mobile-panel-btn active">
                 <i class="fas fa-tools"></i>
                 <span>Tools</span>
             </button>
-            <button id="toggle-ai-panel-btn" data-panel-target="ai-generation-panel">
-                <i class="fas fa-magic"></i>
-                <span>AI Gen</span>
-            </button>
-            <button id="toggle-layers-panel-btn" data-panel-target="layers-container">
+            <button id="toggle-layers-panel-btn" data-panel-target="layers-container" class="mobile-panel-btn">
                 <i class="fas fa-layer-group"></i>
                 <span>Layers</span>
             </button>
-            <button id="toggle-properties-panel-btn" data-panel-target="properties-container">
+            <button id="toggle-properties-panel-btn" data-panel-target="properties-container" class="mobile-panel-btn">
                 <i class="fas fa-sliders-h"></i>
                 <span>Props</span>
             </button>
-            <button id="mobile-export-btn" class="primary-btn" style="padding: 10px 15px; border-radius: 50%;">
+            <button id="toggle-ai-panel-btn" data-panel-target="ai-panel" class="mobile-panel-btn">
+                <i class="fas fa-magic"></i>
+                <span>AI</span>
+            </button>
+            <button id="mobile-export-btn" class="primary-btn">
                 <i class="fas fa-download"></i>
-                <span style="display:none;">Export</span>
             </button>
         </div>
     </div>
 
+    <!-- Modals and Overlays -->
+    <div id="custom-alert-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content alert-content">
+            <div class="alert-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <p id="custom-alert-message"></p>
+            <button id="custom-alert-ok-btn" class="primary-btn">OK</button>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content confirm-content">
+            <div class="alert-icon warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 id="confirm-title">Confirm Action</h3>
+            <p id="confirm-message"></p>
+            <div class="confirm-actions">
+                <button id="confirm-cancel-btn" class="secondary-btn">Cancel</button>
+                <button id="confirm-ok-btn" class="primary-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mobile-menu-overlay">
+        <div class="mobile-menu-backdrop"></div>
+        <div class="mobile-menu-content">
+            <button class="close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+            <nav id="mobile-nav-content"></nav>
+        </div>
+    </div>
+
+    <!-- Share Prompt Modal -->
+    <div id="share-prompt-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content share-content">
+            <div class="modal-header">
+                <h3>Share AI Prompt</h3>
+                <button class="close-btn" id="share-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="share-content-body">
+                <div class="prop-group">
+                    <label>Generated Prompt</label>
+                    <textarea id="share-prompt-text" readonly rows="6"></textarea>
+                </div>
+                <div class="share-actions">
+                    <button class="secondary-btn" id="copy-prompt-btn">
+                        <i class="fas fa-copy"></i>
+                        Copy to Clipboard
+                    </button>
+                    <button class="primary-btn" id="download-prompt-btn">
+                        <i class="fas fa-download"></i>
+                        Download as Text
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
