@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="style.css">
     <meta name="description" content="Professional visual design editor with AI generation capabilities">
     <meta name="keywords" content="visual editor, design tool, canvas editor, AI generation, graphics editor">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 </head>
 <body>
     <!-- Canvas Size Selection Modal -->
@@ -48,63 +49,63 @@
                 <!-- Social Media Templates -->
                 <div class="template-category active" data-category="social">
                     <div class="template-grid">
-                        <button class="template-btn" data-size="800x600" data-name="Small Canvas">
+                        <button class="template-btn touch-target" data-size="800x600" data-name="Small Canvas">
                             <div class="template-preview wide"></div>
                             <div class="template-info">
                                 <h4>Small Canvas</h4>
                                 <span>800 × 600</span>
                             </div>
                         </button>
-                        <button class="template-btn" data-size="1080x1080" data-name="Instagram Post">
+                        <button class="template-btn touch-target" data-size="1080x1080" data-name="Instagram Post">
                             <div class="template-preview square"></div>
                             <div class="template-info">
                                 <h4>Instagram Post</h4>
                                 <span>1080 × 1080</span>
                             </div>
                         </button>
-                        <button class="template-btn" data-size="1080x1920" data-name="Instagram Story">
+                        <button class="template-btn touch-target" data-size="1080x1920" data-name="Instagram Story">
                             <div class="template-preview story"></div>
                             <div class="template-info">
                                 <h4>Instagram Story</h4>
                                 <span>1080 × 1920</span>
                             </div>
                         </button>
-                        <button class="template-btn" data-size="1200x630" data-name="Facebook Cover">
+                        <button class="template-btn touch-target" data-size="1200x630" data-name="Facebook Cover">
                             <div class="template-preview wide"></div>
                             <div class="template-info">
                                 <h4>Facebook Cover</h4>
                                 <span>1200 × 630</span>
                             </div>
                         </button>
-                        <button class="template-btn" data-size="1200x675" data-name="Facebook Post">
+                        <button class="template-btn touch-target" data-size="1200x675" data-name="Facebook Post">
                             <div class="template-preview wide"></div>
                             <div class="template-info">
                                 <h4>Facebook Post</h4>
                                 <span>1200 × 675</span>
                             </div>
                         </button>
-                        <button class="template-btn" data-size="1024x512" data-name="Twitter Header">
+                        <button class="template-btn touch-target" data-size="1024x512" data-name="Twitter Header">
                             <div class="template-preview wide"></div>
                             <div class="template-info">
                                 <h4>Twitter Header</h4>
                                 <span>1024 × 512</span>
                             </div>
                         </button>
-                        <button class="template-btn" data-size="1280x720" data-name="YouTube Thumbnail">
+                        <button class="template-btn touch-target" data-size="1280x720" data-name="YouTube Thumbnail">
                             <div class="template-preview video"></div>
                             <div class="template-info">
                                 <h4>YouTube Thumbnail</h4>
                                 <span>1280 × 720</span>
                             </div>
                         </button>
-                        <button class="template-btn" data-size="1000x1500" data-name="Pinterest Pin">
+                        <button class="template-btn touch-target" data-size="1000x1500" data-name="Pinterest Pin">
                             <div class="template-preview tall"></div>
                             <div class="template-info">
                                 <h4>Pinterest Pin</h4>
                                 <span>1000 × 1500</span>
                             </div>
                         </button>
-                        <button class="template-btn" data-size="1080x566" data-name="LinkedIn Post">
+                        <button class="template-btn touch-target" data-size="1080x566" data-name="LinkedIn Post">
                             <div class="template-preview wide"></div>
                             <div class="template-info">
                                 <h4>LinkedIn Post</h4>
@@ -289,7 +290,7 @@
                 </div>
 
                 <div class="modal-actions">
-                    <button id="create-canvas-btn" class="primary-btn" disabled>
+                    <button id="create-canvas-btn" class="primary-btn touch-target" disabled>
                         <i class="fas fa-plus"></i>
                         Create Canvas
                     </button>
@@ -299,12 +300,12 @@
     </div>
 
     <!-- Main Application Layout -->
-    <div class="main-layout" data-app-mode="edit">
+    <div class="main-layout" data-workspace-hidden="true">
         <!-- Header with Menu Bar -->
         <header class="top-menu-bar">
             <div class="logo">
                 <i class="fas fa-drafting-compass"></i>
-                <span></span>
+                <span>Visual Composer Pro</span>
             </div>
             
             <!-- Desktop Navigation -->
@@ -407,19 +408,19 @@
 
             <!-- Header Actions -->
             <div class="user-actions">
-                <button title="AI Generate" id="ai-toggle-btn" class="action-btn ai-btn">
+                <button title="AI Generate" id="ai-toggle-btn" class="action-btn ai-btn touch-target" aria-label="Toggle AI Generation Panel">
                     <i class="fas fa-magic"></i>
                 </button>
-                <button title="Undo" id="undo-btn" class="action-btn">
+                <button title="Undo" id="undo-btn" class="action-btn touch-target" aria-label="Undo">
                     <i class="fas fa-undo"></i>
                 </button>
-                <button title="Redo" id="redo-btn" class="action-btn">
+                <button title="Redo" id="redo-btn" class="action-btn touch-target" aria-label="Redo">
                     <i class="fas fa-redo"></i>
                 </button>
-                <button title="Toggle Theme" id="theme-toggle" class="action-btn">
+                <button title="Toggle Theme" id="theme-toggle" class="action-btn touch-target" aria-label="Toggle Dark/Light Theme">
                     <i class="fas fa-moon"></i>
                 </button>
-                <button title="Menu" id="mobile-menu-toggle-btn" class="action-btn mobile-only">
+                <button title="Menu" id="mobile-menu-toggle-btn" class="action-btn mobile-only touch-target" aria-label="Open Mobile Menu">
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
@@ -429,7 +430,7 @@
         <aside class="ai-panel" id="ai-panel">
             <div class="ai-panel-header">
                 <h3><i class="fas fa-magic"></i> AI Generation</h3>
-                <button class="ai-close-btn" id="ai-close-btn">
+                <button class="ai-close-btn touch-target" id="ai-close-btn" aria-label="Close AI Panel">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -488,18 +489,18 @@
                     <label>Blur Intensity: <span id="blur-value">0</span></label>
                     <input type="range" id="ai-blur" min="0" max="10" value="0">
                 </div>
-                <button class="primary-btn" id="generate-ai-image-btn">
+                <button class="primary-btn touch-target" id="generate-ai-image-btn" aria-label="Generate AI Image">
                     <i class="fas fa-magic"></i>
                     Generate Image
                 </button>
                 <div class="ai-result" id="ai-result" style="display: none;">
                     <img id="ai-generated-image" alt="Generated Image">
                     <div class="ai-result-actions">
-                        <button class="secondary-btn" id="regenerate-btn">
+                        <button class="secondary-btn touch-target" id="regenerate-btn" aria-label="Regenerate Image">
                             <i class="fas fa-redo"></i>
                             Regenerate
                         </button>
-                        <button class="primary-btn" id="add-to-canvas-btn">
+                        <button class="primary-btn touch-target" id="add-to-canvas-btn" aria-label="Add Image to Canvas">
                             <i class="fas fa-plus"></i>
                             Add to Canvas
                         </button>
@@ -510,18 +511,27 @@
 
         <!-- Tools Panel (Left Sidebar) -->
         <aside class="tools-panel">
+            <!-- AI Generation Tool -->
+            <div class="tool-group">
+                <button class="tool-btn touch-target" data-tool="ai-generate" title="AI Generate (G)" aria-label="AI Image Generation">
+                    <i class="fas fa-magic"></i>
+                </button>
+            </div>
+
+            <hr>
+
             <!-- Selection Tools -->
             <div class="tool-group">
-                <button class="tool-btn active" data-tool="select" title="Select Tool (V)">
+                <button class="tool-btn active touch-target" data-tool="select" title="Select Tool (V)" aria-label="Select Tool">
                     <i class="fas fa-mouse-pointer"></i>
                 </button>
-                <button class="tool-btn" data-tool="marquee" title="Marquee Selection (M)">
+                <button class="tool-btn touch-target" data-tool="marquee" title="Marquee Selection (M)" aria-label="Marquee Selection">
                     <i class="fas fa-vector-square"></i>
                 </button>
-                <button class="tool-btn" data-tool="lasso" title="Lasso Tool (L)">
+                <button class="tool-btn touch-target" data-tool="lasso" title="Lasso Tool (L)" aria-label="Lasso Tool">
                     <i class="fas fa-lasso"></i>
                 </button>
-                <button class="tool-btn" data-tool="magic-wand" title="Magic Wand (W)">
+                <button class="tool-btn touch-target" data-tool="magic-wand" title="Magic Wand (W)" aria-label="Magic Wand">
                     <i class="fas fa-magic"></i>
                 </button>
             </div>
@@ -530,10 +540,10 @@
 
             <!-- Navigation Tools -->
             <div class="tool-group">
-                <button class="tool-btn" data-tool="hand" title="Hand Tool (H)">
+                <button class="tool-btn touch-target" data-tool="hand" title="Hand Tool (H)" aria-label="Hand Tool">
                     <i class="fas fa-hand-paper"></i>
                 </button>
-                <button class="tool-btn" data-tool="zoom" title="Zoom Tool (Z)">
+                <button class="tool-btn touch-target" data-tool="zoom" title="Zoom Tool (Z)" aria-label="Zoom Tool">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
@@ -542,22 +552,22 @@
 
             <!-- Drawing Tools -->
             <div class="tool-group">
-                <button class="tool-btn" data-tool="brush" title="Brush Tool (B)">
+                <button class="tool-btn touch-target" data-tool="brush" title="Brush Tool (B)" aria-label="Brush Tool">
                     <i class="fas fa-paint-brush"></i>
                 </button>
-                <button class="tool-btn" data-tool="eraser" title="Eraser Tool (E)">
+                <button class="tool-btn touch-target" data-tool="eraser" title="Eraser Tool (E)" aria-label="Eraser Tool">
                     <i class="fas fa-eraser"></i>
                 </button>
-                <button class="tool-btn" data-tool="clone-stamp" title="Clone Stamp (S)">
+                <button class="tool-btn touch-target" data-tool="clone-stamp" title="Clone Stamp (S)" aria-label="Clone Stamp">
                     <i class="fas fa-stamp"></i>
                 </button>
-                <button class="tool-btn" data-tool="color-picker" title="Color Picker (I)">
+                <button class="tool-btn touch-target" data-tool="color-picker" title="Color Picker (I)" aria-label="Color Picker">
                     <i class="fas fa-eye-dropper"></i>
                 </button>
-                <button class="tool-btn" data-tool="fill-bucket" title="Fill Bucket (G)">
+                <button class="tool-btn touch-target" data-tool="fill-bucket" title="Fill Bucket (G)" aria-label="Fill Bucket">
                     <i class="fas fa-fill-drip"></i>
                 </button>
-                <button class="tool-btn" data-tool="gradient" title="Gradient Tool (R)">
+                <button class="tool-btn touch-target" data-tool="gradient" title="Gradient Tool (R)" aria-label="Gradient Tool">
                     <i class="fas fa-gradient"></i>
                 </button>
             </div>
@@ -566,16 +576,16 @@
 
             <!-- Enhancement Tools -->
             <div class="tool-group">
-                <button class="tool-btn" data-tool="dodge" title="Dodge Tool (O)">
+                <button class="tool-btn touch-target" data-tool="dodge" title="Dodge Tool (O)" aria-label="Dodge Tool">
                     <i class="fas fa-sun"></i>
                 </button>
-                <button class="tool-btn" data-tool="burn" title="Burn Tool (U)">
+                <button class="tool-btn touch-target" data-tool="burn" title="Burn Tool (U)" aria-label="Burn Tool">
                     <i class="fas fa-fire"></i>
                 </button>
-                <button class="tool-btn" data-tool="sponge" title="Sponge Tool (P)">
+                <button class="tool-btn touch-target" data-tool="sponge" title="Sponge Tool (P)" aria-label="Sponge Tool">
                     <i class="fas fa-sponge"></i>
                 </button>
-                <button class="tool-btn" data-tool="history-brush" title="History Brush (Y)">
+                <button class="tool-btn touch-target" data-tool="history-brush" title="History Brush (Y)" aria-label="History Brush">
                     <i class="fas fa-history"></i>
                 </button>
             </div>
@@ -584,13 +594,13 @@
 
             <!-- Shape & Text Tools -->
             <div class="tool-group">
-                <button class="tool-btn" data-tool="text" title="Text Tool (T)">
+                <button class="tool-btn touch-target" data-tool="text" title="Text Tool (T)" aria-label="Text Tool">
                     <i class="fas fa-font"></i>
                 </button>
-                <button class="tool-btn" data-tool="pen" title="Pen Tool (P)">
+                <button class="tool-btn touch-target" data-tool="pen" title="Pen Tool (P)" aria-label="Pen Tool">
                     <i class="fas fa-pen-nib"></i>
                 </button>
-                <button class="tool-btn" data-tool="path-select" title="Path Selection (A)">
+                <button class="tool-btn touch-target" data-tool="path-select" title="Path Selection (A)" aria-label="Path Selection">
                     <i class="fas fa-bezier-curve"></i>
                 </button>
             </div>
@@ -599,16 +609,16 @@
 
             <!-- Shape Tools -->
             <div class="tool-group">
-                <button class="tool-btn" data-tool="shape" data-shape="rect" title="Rectangle (R)">
+                <button class="tool-btn touch-target" data-tool="shape" data-shape="rect" title="Rectangle (R)" aria-label="Rectangle">
                     <i class="fas fa-square"></i>
                 </button>
-                <button class="tool-btn" data-tool="shape" data-shape="circle" title="Circle (C)">
+                <button class="tool-btn touch-target" data-tool="shape" data-shape="circle" title="Circle (C)" aria-label="Circle">
                     <i class="fas fa-circle"></i>
                 </button>
-                <button class="tool-btn" data-tool="shape" data-shape="line" title="Line (L)">
+                <button class="tool-btn touch-target" data-tool="shape" data-shape="line" title="Line (L)" aria-label="Line">
                     <i class="fas fa-minus"></i>
                 </button>
-                <button class="tool-btn" data-tool="shape" data-shape="polygon" title="Polygon">
+                <button class="tool-btn touch-target" data-tool="shape" data-shape="polygon" title="Polygon" aria-label="Polygon">
                     <i class="fas fa-draw-polygon"></i>
                 </button>
             </div>
@@ -617,11 +627,11 @@
 
             <!-- Utility Tools -->
             <div class="tool-group">
-                <button class="tool-btn" data-tool="crop" title="Crop Tool (C)">
+                <button class="tool-btn touch-target" data-tool="crop" title="Crop Tool (C)" aria-label="Crop Tool">
                     <i class="fas fa-crop-alt"></i>
                 </button>
                 <input type="file" id="image-upload" hidden accept="image/*">
-                <button class="tool-btn" id="image-upload-btn" title="Upload Image">
+                <button class="tool-btn touch-target" id="image-upload-btn" title="Upload Image" aria-label="Upload Image">
                     <i class="fas fa-upload"></i>
                 </button>
             </div>
@@ -635,13 +645,13 @@
                     <span id="canvas-dimensions">800 × 600</span>
                 </div>
                 <div class="canvas-actions">
-                    <button class="canvas-btn" id="grid-toggle" title="Toggle Grid">
+                    <button class="canvas-btn touch-target" id="grid-toggle" title="Toggle Grid" aria-label="Toggle Grid">
                         <i class="fas fa-th"></i>
                     </button>
-                    <button class="canvas-btn" id="rulers-toggle" title="Toggle Rulers">
+                    <button class="canvas-btn touch-target" id="rulers-toggle" title="Toggle Rulers" aria-label="Toggle Rulers">
                         <i class="fas fa-ruler"></i>
                     </button>
-                    <button class="canvas-btn" id="fit-to-screen" title="Fit to Screen">
+                    <button class="canvas-btn touch-target" id="fit-to-screen" title="Fit to Screen" aria-label="Fit to Screen">
                         <i class="fas fa-expand"></i>
                     </button>
                 </div>
@@ -655,8 +665,8 @@
                 </div>
             </div>
             <div id="crop-actions" class="crop-actions-container">
-                <button id="apply-crop-btn" class="primary-btn">Apply Crop</button>
-                <button id="cancel-crop-btn" class="secondary-btn">Cancel</button>
+                <button id="apply-crop-btn" class="primary-btn touch-target" aria-label="Apply Crop">Apply Crop</button>
+                <button id="cancel-crop-btn" class="secondary-btn touch-target" aria-label="Cancel Crop">Cancel</button>
             </div>
         </main>
 
@@ -670,7 +680,7 @@
                         Layers
                     </h3>
                     <div class="panel-actions">
-                        <button class="panel-btn" id="add-new-layer-btn" title="Add Layer">
+                        <button class="panel-btn touch-target" id="add-new-layer-btn" title="Add Layer" aria-label="Add New Layer">
                             <i class="fas fa-plus"></i>
                         </button>
                         <i class="fas fa-chevron-down toggle-icon"></i>
@@ -678,20 +688,20 @@
                 </div>
                 <div class="panel-content collapsible-content">
                     <div class="layer-controls">
-                        <button class="layer-control-btn" id="move-layer-up-btn" title="Move Up">
+                        <button class="layer-control-btn touch-target" id="move-layer-up-btn" title="Move Up" aria-label="Move Layer Up">
                             <i class="fas fa-arrow-up"></i>
                         </button>
-                        <button class="layer-control-btn" id="move-layer-down-btn" title="Move Down">
+                        <button class="layer-control-btn touch-target" id="move-layer-down-btn" title="Move Down" aria-label="Move Layer Down">
                             <i class="fas fa-arrow-down"></i>
                         </button>
-                        <button class="layer-control-btn" id="duplicate-layer-btn" title="Duplicate">
+                        <button class="layer-control-btn touch-target" id="duplicate-layer-btn" title="Duplicate" aria-label="Duplicate Layer">
                             <i class="fas fa-clone"></i>
                         </button>
-                        <button class="layer-control-btn" id="delete-layer-btn" title="Delete">
+                        <button class="layer-control-btn touch-target" id="delete-layer-btn" title="Delete" aria-label="Delete Layer">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
-                    <ul class="layers-list" id="layers-list"></ul>
+                    <ul class="layers-list" id="layers-list" role="list" aria-label="Layers"></ul>
                 </div>
             </div>
 
@@ -726,23 +736,23 @@
                             <div class="color-current" id="color-current"></div>
                             <div class="color-previous" id="color-previous"></div>
                         </div>
-                        <input type="color" id="color-picker" value="#800080">
+                        <input type="color" id="color-picker" value="#800080" aria-label="Color Picker">
                     </div>
                     <div class="color-swatches">
                         <h4>Recent Colors</h4>
-                        <div class="swatch-grid" id="recent-colors"></div>
+                        <div class="swatch-grid" id="recent-colors" role="group" aria-label="Recent Colors"></div>
                     </div>
                     <div class="color-presets">
                         <h4>Color Presets</h4>
-                        <div class="swatch-grid">
-                            <div class="color-swatch" data-color="#800080" style="background: #800080;"></div>
-                            <div class="color-swatch" data-color="#9932cc" style="background: #9932cc;"></div>
-                            <div class="color-swatch" data-color="#ba55d3" style="background: #ba55d3;"></div>
-                            <div class="color-swatch" data-color="#da70d6" style="background: #da70d6;"></div>
-                            <div class="color-swatch" data-color="#ee82ee" style="background: #ee82ee;"></div>
-                            <div class="color-swatch" data-color="#dda0dd" style="background: #dda0dd;"></div>
-                            <div class="color-swatch" data-color="#e6e6fa" style="background: #e6e6fa;"></div>
-                            <div class="color-swatch" data-color="#f8f8ff" style="background: #f8f8ff;"></div>
+                        <div class="swatch-grid" role="group" aria-label="Color Presets">
+                            <div class="color-swatch touch-target" data-color="#800080" style="background: #800080;" aria-label="Purple" role="button" tabindex="0"></div>
+                            <div class="color-swatch touch-target" data-color="#9932cc" style="background: #9932cc;" aria-label="Dark Orchid" role="button" tabindex="0"></div>
+                            <div class="color-swatch touch-target" data-color="#ba55d3" style="background: #ba55d3;" aria-label="Medium Orchid" role="button" tabindex="0"></div>
+                            <div class="color-swatch touch-target" data-color="#da70d6" style="background: #da70d6;" aria-label="Orchid" role="button" tabindex="0"></div>
+                            <div class="color-swatch touch-target" data-color="#ee82ee" style="background: #ee82ee;" aria-label="Violet" role="button" tabindex="0"></div>
+                            <div class="color-swatch touch-target" data-color="#dda0dd" style="background: #dda0dd;" aria-label="Plum" role="button" tabindex="0"></div>
+                            <div class="color-swatch touch-target" data-color="#e6e6fa" style="background: #e6e6fa;" aria-label="Lavender" role="button" tabindex="0"></div>
+                            <div class="color-swatch touch-target" data-color="#f8f8ff" style="background: #f8f8ff;" aria-label="Ghost White" role="button" tabindex="0"></div>
                         </div>
                     </div>
                 </div>
@@ -758,7 +768,7 @@
                     <i class="fas fa-chevron-down toggle-icon"></i>
                 </div>
                 <div class="panel-content collapsible-content">
-                    <div class="history-list" id="history-list"></div>
+                    <div class="history-list" id="history-list" role="list" aria-label="History"></div>
                 </div>
             </div>
         </aside>
@@ -776,17 +786,17 @@
                 </select>
             </div>
             <div id="zoom-controls">
-                <button class="zoom-btn" id="zoom-out-btn">
+                <button class="zoom-btn touch-target" id="zoom-out-btn" aria-label="Zoom Out">
                     <i class="fas fa-search-minus"></i>
                 </button>
-                <input type="range" id="zoom-slider" min="10" max="300" value="100">
-                <button class="zoom-btn" id="zoom-in-btn">
+                <input type="range" id="zoom-slider" min="10" max="300" value="100" aria-label="Zoom Level">
+                <button class="zoom-btn touch-target" id="zoom-in-btn" aria-label="Zoom In">
                     <i class="fas fa-search-plus"></i>
                 </button>
                 <span id="zoom-level">100%</span>
             </div>
             <div class="action-buttons">
-                <button id="export-btn" class="primary-btn">
+                <button id="export-btn" class="primary-btn touch-target" aria-label="Export Canvas">
                     <i class="fas fa-download"></i>
                     Export
                 </button>
@@ -795,23 +805,23 @@
 
         <!-- Mobile Bottom Bar -->
         <div class="mobile-bottom-bar">
-            <button id="toggle-tools-panel-btn" data-panel-target="tools-panel" class="mobile-panel-btn active">
+            <button id="toggle-tools-panel-btn" data-panel-target="tools-panel" class="mobile-panel-btn active touch-target" aria-label="Toggle Tools Panel">
                 <i class="fas fa-tools"></i>
                 <span>Tools</span>
             </button>
-            <button id="toggle-layers-panel-btn" data-panel-target="layers-container" class="mobile-panel-btn">
+            <button id="toggle-layers-panel-btn" data-panel-target="layers-container" class="mobile-panel-btn touch-target" aria-label="Toggle Layers Panel">
                 <i class="fas fa-layer-group"></i>
                 <span>Layers</span>
             </button>
-            <button id="toggle-properties-panel-btn" data-panel-target="properties-container" class="mobile-panel-btn">
+            <button id="toggle-properties-panel-btn" data-panel-target="properties-container" class="mobile-panel-btn touch-target" aria-label="Toggle Properties Panel">
                 <i class="fas fa-sliders-h"></i>
                 <span>Props</span>
             </button>
-            <button id="toggle-ai-panel-btn" data-panel-target="ai-panel" class="mobile-panel-btn">
+            <button id="toggle-ai-panel-btn" data-panel-target="ai-panel" class="mobile-panel-btn touch-target" aria-label="Toggle AI Panel">
                 <i class="fas fa-magic"></i>
                 <span>AI</span>
             </button>
-            <button id="mobile-export-btn" class="primary-btn">
+            <button id="mobile-export-btn" class="primary-btn touch-target" aria-label="Export Canvas">
                 <i class="fas fa-download"></i>
             </button>
         </div>
@@ -825,7 +835,7 @@
                 <i class="fas fa-info-circle"></i>
             </div>
             <p id="custom-alert-message"></p>
-            <button id="custom-alert-ok-btn" class="primary-btn">OK</button>
+            <button id="custom-alert-ok-btn" class="primary-btn touch-target" aria-label="OK">OK</button>
         </div>
     </div>
 
@@ -838,8 +848,8 @@
             <h3 id="confirm-title">Confirm Action</h3>
             <p id="confirm-message"></p>
             <div class="confirm-actions">
-                <button id="confirm-cancel-btn" class="secondary-btn">Cancel</button>
-                <button id="confirm-ok-btn" class="primary-btn">Confirm</button>
+                <button id="confirm-cancel-btn" class="secondary-btn touch-target" aria-label="Cancel">Cancel</button>
+                <button id="confirm-ok-btn" class="primary-btn touch-target" aria-label="Confirm">Confirm</button>
             </div>
         </div>
     </div>
@@ -847,10 +857,10 @@
     <div class="mobile-menu-overlay">
         <div class="mobile-menu-backdrop"></div>
         <div class="mobile-menu-content">
-            <button class="close-btn">
+            <button class="close-btn touch-target" aria-label="Close Menu">
                 <i class="fas fa-times"></i>
             </button>
-            <nav id="mobile-nav-content"></nav>
+            <nav id="mobile-nav-content" role="navigation" aria-label="Mobile Navigation"></nav>
         </div>
     </div>
 
@@ -860,21 +870,21 @@
         <div class="modal-content share-content">
             <div class="modal-header">
                 <h3>Share AI Prompt</h3>
-                <button class="close-btn" id="share-close-btn">
+                <button class="close-btn touch-target" id="share-close-btn" aria-label="Close Share Modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="share-content-body">
                 <div class="prop-group">
                     <label>Generated Prompt</label>
-                    <textarea id="share-prompt-text" readonly rows="6"></textarea>
+                    <textarea id="share-prompt-text" readonly rows="6" aria-label="Generated Prompt Text"></textarea>
                 </div>
                 <div class="share-actions">
-                    <button class="secondary-btn" id="copy-prompt-btn">
+                    <button class="secondary-btn touch-target" id="copy-prompt-btn" aria-label="Copy Prompt to Clipboard">
                         <i class="fas fa-copy"></i>
                         Copy to Clipboard
                     </button>
-                    <button class="primary-btn" id="download-prompt-btn">
+                    <button class="primary-btn touch-target" id="download-prompt-btn" aria-label="Download Prompt as Text File">
                         <i class="fas fa-download"></i>
                         Download as Text
                     </button>
