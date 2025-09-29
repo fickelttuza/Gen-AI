@@ -28,7 +28,7 @@ class VisualComposerPro {
     }
 
     init() {
-        this.setupCanvas();
+this.setupCanvas();
         this.setupEventListeners();
         this.setupTools();
         this.setupLayers();
@@ -58,8 +58,7 @@ class VisualComposerPro {
             height: this.canvasHeight * ratio
         }, { cssOnly: false });
         this.fabricCanvas.setZoom(ratio);
-
-        this.canvas = canvasElement;
+this.canvas = canvasElement;
         this.updateCanvasInfo();
     }
 
@@ -278,6 +277,22 @@ class VisualComposerPro {
                 } else {
                     document.getElementById('custom-size-inputs').style.display = 'none';
                 }
+
+                // Live resize if modal is not active (i.e., canvas already exists)
+                const modal = document.getElementById('canvas-size-modal');
+                if (!modal.classList.contains('active')) {
+                    let size = btn.dataset.size;
+                    let name = btn.dataset.name;
+
+                    if (size === 'custom') {
+                        // For custom size, we'll need to wait for user input
+                        // or provide a default resize behavior.
+                        // For now, we'll skip live resize for custom until user confirms.
+                        return; 
+                    }
+                    const [width, height] = size.split('x').map(Number);
+                    this.resizeCanvas(width, height, name);
+                }
             });
         });
 
@@ -328,6 +343,34 @@ class VisualComposerPro {
         this.updateLayersList();
         this.saveState();
         this.fitToScreen();
+    }
+
+    resizeCanvas(width, height, name) {
+        // Store current zoom and pan
+        const currentZoom = this.fabricCanvas.getZoom();
+        const viewportTransform = this.fabricCanvas.viewportTransform;
+        const currentCenterX = (this.fabricCanvas.width / 2 - viewportTransform[4]) / currentZoom;
+        const currentCenterY = (this.fabricCanvas.height / 2 - viewportTransform[5]) / currentZoom;
+
+        this.canvasWidth = width;
+        this.canvasHeight = height;
+
+        this.fabricCanvas.setDimensions({
+            width: width,
+            height: height
+        });
+
+        // Re-center the canvas at the same logical point
+        this.fabricCanvas.setViewportTransform([
+            currentZoom, 0, 0, currentZoom,
+            this.fabricCanvas.width / 2 - currentCenterX * currentZoom,
+            this.fabricCanvas.height / 2 - currentCenterY * currentZoom
+        ]);
+
+        document.getElementById('canvas-name').textContent = name;
+        document.getElementById('canvas-dimensions').textContent = `${width} × ${height}`;
+        this.saveState();
+        this.fabricCanvas.requestRenderAll();
     }
 
     setupTools() {
@@ -612,7 +655,6 @@ class VisualComposerPro {
         this.currentLayer = layer;
         this.updateLayersList();
     }
-
     addLayer() {
         const layer = {
             id: 'layer-' + Date.now(),
@@ -1036,7 +1078,8 @@ class VisualComposerPro {
 
     async callFreeAIService(prompt, options) {
         // Using Pollinations.ai - a free AI image generation service
-        try {
+        
+           try {
             const params = new URLSearchParams({
                 prompt: prompt,
                 width: this.getWidthFromAspectRatio(options.aspectRatio),
@@ -1045,10 +1088,10 @@ class VisualComposerPro {
                 model: this.mapModelToService(options.model),
                 enhance: options.quality === 'high' || options.quality === 'ultra' ? 'true' : 'false'
             });
+            params.append('nologo', 'true');
 
             if (options.negativePrompt) {
-                params.append('negative', options.negativePrompt);
-            }
+                params.append('negative', options.negativePrompt); }
 
             if (options.style && options.style !== 'none') {
                 params.append('style', options.style);
